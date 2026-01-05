@@ -50,7 +50,7 @@ CREATE TABLE Planes (
     size ENUM('Big', 'Small') NOT NULL 
 );
 
-CREATE TABLE Classes (
+CREATE TABLE FlightClass (
     plane_id VARCHAR(20),
     class_type ENUM('Business', 'Economy'),
     num_columns INT,
@@ -66,7 +66,7 @@ CREATE TABLE Seats (
     row_num INT,
     col_num VARCHAR(5),
     PRIMARY KEY (plane_id, class_type, row_num, col_num),
-    FOREIGN KEY (plane_id, class_type) REFERENCES Classes(plane_id, class_type) ON DELETE CASCADE
+    FOREIGN KEY (plane_id, class_type) REFERENCES FlightClass(plane_id, class_type) ON DELETE CASCADE
 );
 
 -- ==========================================
