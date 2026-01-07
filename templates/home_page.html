@@ -2,9 +2,82 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyHigh - Find Your Freedom</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="SkyHigh" class="nav-logo">
+
+            <div class="nav-links">
+                <a href="#">Hotels</a>
+                <a href="#">Car Hire</a>
+                <a href="#" class="active">Flights</a>
+                <a href="#">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Millions of cheap flights. One simple search.</h1>
+
+            <form action="/search" method="POST" class="search-widget">
+
+                <div class="search-row-top">
+                    <input type="text" name="flight_num" placeholder="Flight Number (Optional)" class="transparent-input">
+                </div>
+
+                <div class="search-row-main">
+                    <div class="input-card location-card">
+                        <label>From</label>
+                        <div class="multi-input-group">
+                            <input type="text" name="source_country" placeholder="Country" required>
+                            <input type="text" name="source_city" placeholder="City" required>
+                            <input type="text" name="source_airport" placeholder="Airport" required>
+                        </div>
+                    </div>
+
+                    <div class="swap-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+
+                    <div class="input-card location-card">
+                        <label>To</label>
+                        <div class="multi-input-group">
+                            <input type="text" name="dest_country" placeholder="Country" required>
+                            <input type="text" name="dest_city" placeholder="City" required>
+                            <input type="text" name="dest_airport" placeholder="Airport" required>
+                        </div>
+                    </div>
+
+                    <div class="input-card date-card">
+                        <div class="date-group">
+                            <label>Depart</label>
+                            <input type="date" name="exit_date" required>
+                        </div>
+                        <div class="date-group border-left">
+                            <label>Return</label>
+                            <input type="date" name="return_date">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="search-btn">
+                        Search
+                    </button>
+                </div>
+
+                <div class="search-options">
+                    <label><input type="checkbox"> Add nearby airports</label>
+                    <label><input type="checkbox"> Direct flights only</label>
+                </div>
+            </form>
+        </div>
+    </div>
 
 </body>
 </html>
