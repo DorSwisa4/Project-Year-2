@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyHigh - Create Account</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <div class="container">
+    <div class="form-wrapper">
+
+      <header>
+        <h1>Create your account</h1>
+        <p>Join SkyHigh and start searching for your next flight.</p>
+      </header>
+
+      <form action="/register" method="POST" id="registerForm">
+
+        <div class="input-group">
+          <label for="first_name">First Name</label>
+          <input id="first_name" name="first_name" type="text" placeholder="John" required />
+        </div>
+
+        <div class="input-group">
+          <label for="last_name">Last Name</label>
+          <input id="last_name" name="last_name" type="text" placeholder="Doe" required />
+        </div>
+
+        <div class="input-group">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" placeholder="john.doe@email.com" required />
+        </div>
+
+        <div class="input-group">
+          <label for="passport_number">Passport Number</label>
+          <input id="passport_number" name="passport_number" type="text" placeholder="A12345678" required />
+        </div>
+
+        <div class="input-group">
+          <label for="birth_date">Date of Birth</label>
+          <input id="birth_date" name="birth_date" type="date" required />
+        </div>
+
+        <div class="input-group">
+          <label for="password">Personal Password</label>
+          <input id="password" name="password" type="password" placeholder="Create a strong password" minlength="6" required />
+        </div>
+
+        <!-- Phones (dynamic) -->
+        <div class="phones-block">
+          <div class="phones-header">
+            <label>Phone Numbers</label>
+            <button type="button" class="small-btn" id="addPhoneBtn">
+              <i class="fas fa-plus"></i> Add phone
+            </button>
+          </div>
+
+          <div id="phonesContainer">
+            <div class="phone-row">
+              <input name="phones[]" type="tel" placeholder="+972 50-123-4567" required />
+              <button type="button" class="icon-btn remove-btn" aria-label="Remove phone" title="Remove">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <p class="helper-text">You can add multiple phone numbers.</p>
+        </div>
+
+        <!-- Registration date -->
+        <div class="input-group">
+          <label for="registration_date">Registration Date</label>
+          <input id="registration_date" name="registration_date" type="date" readonly />
+        </div>
+
+        <button type="submit" class="submit-btn">Create Account</button>
+
+        <div class="footer-link">
+          If you already have an account, <a href="/login">click here to log in</a>.
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Set today's date (YYYY-MM-DD) into registration_date
+    (function setToday() {
+      const el = document.getElementById("registration_date");
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const dd = String(today.getDate()).padStart(2, "0");
+      el.value = `${yyyy}-${mm}-${dd}`;
+    })();
+
+    // Phones: add/remove dynamic fields
+    const phonesContainer = document.getElementById("phonesContainer");
+    const addPhoneBtn = document.getElementById("addPhoneBtn");
+
+    function wireRemoveButtons() {
+      const removeButtons = phonesContainer.querySelectorAll(".remove-btn");
+      removeButtons.forEach(btn => {
+        btn.onclick = () => {
+          const rows = phonesContainer.querySelectorAll(".phone-row");
+          // keep at least one row
+          if (rows.length <= 1) return;
+          btn.closest(".phone-row").remove();
+        };
+      });
+    }
+
+    addPhoneBtn.addEventListener("click", () => {
+      const row = document.createElement("div");
+      row.className = "phone-row";
+      row.innerHTML = `
+        <input name="phones[]" type="tel" placeholder="+972 50-123-4567" required />
+        <button type="button" class="icon-btn remove-btn" aria-label="Remove phone" title="Remove">
+          <i class="fas fa-trash"></i>
+        </button>
+      `;
+      phonesContainer.appendChild(row);
+      wireRemoveButtons();
+    });
+
+    wireRemoveButtons();
+  </script>
+
+</body>
+</html>
