@@ -43,7 +43,8 @@ class GuestCustomer:
         self.phones = []  # מקום לשמור רשימת טלפונים אם תשלוף אותם
 
 class RegisteredCustomer:
-    def __init__(self, email, first_name_en, last_name_en, registration_date, passport_num, password, birth_date):
+    def __init__(self, email, first_name_en, last_name_en, registration_date, passport_num, password, birth_date,
+                 phones=None):
         self.email = email
         self.first_name_en = first_name_en
         self.last_name_en = last_name_en
@@ -51,7 +52,8 @@ class RegisteredCustomer:
         self.passport_num = passport_num
         self.password = password
         self.birth_date = birth_date
-        self.phones = []  # מקום לשמור רשימת טלפונים
+        # If phones are provided, save them. If not, create an empty list.
+        self.phones = phones if phones else []
 
 # ==========================================
 # 3. מטוסים ומושבים (Planes)

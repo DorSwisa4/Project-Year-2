@@ -6,9 +6,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
     <style>
-        /* OVERRIDE BACKGROUND IMAGE SPECIFICALLY FOR THIS PAGE */
+        /* THIS FORCES YOUR SPECIFIC IMAGE AS THE BACKGROUND */
         body {
-            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://media.istockphoto.com/id/1409409162/photo/cropped-image-of-passenger-receiving-boarding-pass.jpg?s=2048x2048&w=is&k=20&c=9_s2BDGHQZ4RNKxMEvcacbmPr5Uy7yIxwQFxHwiw3aI=') no-repeat center center fixed !important;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://media.istockphoto.com/id/1409409162/photo/cropped-image-of-passenger-receiving-boarding-pass.jpg?s=2048x2048&w=is&k=20&c=9_s2BDGHQZ4RNKxMEvcacbmPr5Uy7yIxwQFxHwiw3aI=') no-repeat center center fixed !important;
             background-size: cover !important;
         }
     </style>
@@ -29,7 +29,7 @@
 
         {% with messages = get_flashed_messages() %}
             {% if messages %}
-                <div style="position: absolute; top: 80px; width: 100%; max-width: 450px; z-index: 10;">
+                <div style="position: absolute; top: 90px; width: 100%; max-width: 450px; z-index: 10;">
                     <div class="flash-messages">
                         {% for message in messages %}
                             <p>{{ message }}</p>

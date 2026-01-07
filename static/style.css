@@ -246,7 +246,7 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     width: 100%;
     max-width: 450px; /* Nice narrow column */
-    margin: auto;
+    margin-bottom: 150px;
 }
 
 .form-header {
