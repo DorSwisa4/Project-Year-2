@@ -234,3 +234,79 @@ body {
         min-height: 100vh;
     }
 }
+
+
+/* --- MODERN REGISTRATION FORM STYLES --- */
+
+/* The white container for the form */
+.registration-container {
+    background: rgba(255, 255, 255, 0.95); /* Solid white with tiny transparency */
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    width: 100%;
+    max-width: 450px; /* Nice narrow column */
+    margin: auto;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.form-header h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #004e66; /* Dark blue/teal */
+}
+
+/* The Input Groups */
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+/* The Inputs themselves */
+.modern-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: #f9f9f9;
+    transition: all 0.3s ease;
+}
+
+.modern-input:focus {
+    border-color: #00a8e8;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(0, 168, 232, 0.1); /* Subtle glow */
+    outline: none;
+}
+
+/* Add Phone Button */
+.add-phone-btn {
+    background: none;
+    border: 1px dashed #00a8e8;
+    color: #00a8e8;
+    padding: 8px;
+    width: 100%;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    transition: 0.2s;
+}
+
+.add-phone-btn:hover {
+    background: #e6f7ff;
+}
