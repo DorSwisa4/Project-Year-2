@@ -1,0 +1,236 @@
+/* --- Global Reset & Fonts --- */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+}
+
+/* --- 1. Navigation Bar (Dark Blue) --- */
+.navbar {
+    background-color: #02122c; /* צבע כחול כהה */
+    height: 60px;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.nav-content {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+
+    /* התיקון שהעביר את הקישורים ימינה: */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-logo {
+    height: 50px;
+}
+
+/* התיקון שמונע צפיפות בין הקישורים: */
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 30px; /* רווח של 30 פיקסלים בין כל קישור */
+}
+
+.nav-links a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.nav-links a:hover {
+    color: #00a698; /* צבע טורקיז במעבר עכבר */
+}
+
+.nav-links a.active {
+    color: #00a698;
+}
+
+/* --- 2. Hero Section (Image & Positioning) --- */
+.hero-section {
+    position: relative;
+    /* תמונת רקע עם שכבת הכהיה עדינה */
+    background-image: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    height: 100vh; /* גובה מסך מלא */
+
+    display: flex;
+    justify-content: center;
+
+    /* התיקון שהרים את תיבת החיפוש למעלה: */
+    /* ביטלנו את align-items: center והוספנו padding מלמעלה */
+    padding-top: 80px;
+    box-sizing: border-box;
+}
+
+.hero-content {
+    width: 100%;
+    max-width: 1100px;
+    padding: 20px;
+}
+
+.hero-title {
+    color: white;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    font-weight: 700;
+}
+
+/* --- 3. Search Widget (The Floating Bar) --- */
+.search-widget {
+    background: rgba(2, 18, 44, 0.6); /* רקע כהה חצי שקוף */
+    padding: 20px;
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+}
+
+.search-row-top {
+    margin-bottom: 10px;
+}
+
+.transparent-input {
+    background: transparent;
+    border: none;
+    color: white;
+    border-bottom: 1px solid rgba(255,255,255,0.5);
+    padding: 5px;
+    width: 200px;
+}
+.transparent-input::placeholder { color: #ddd; }
+.transparent-input:focus { outline: none; border-bottom-color: white; }
+
+/* The Horizontal Row of Cards */
+.search-row-main {
+    display: flex;
+    gap: 4px; /* רווח קטנטן בין הכרטיסיות הלבנות */
+    height: 80px;
+}
+
+/* Common Card Styling */
+.input-card {
+    background: white;
+    padding: 10px 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+/* Location Cards (From/To) */
+.location-card {
+    flex: 2; /* כרטיסי המיקום תופסים יותר מקום */
+}
+
+.location-card label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+/* Handling the 3 separate inputs nicely */
+.multi-input-group {
+    display: flex;
+    gap: 5px;
+}
+.multi-input-group input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #02122c;
+    outline: none;
+    padding: 5px 0;
+}
+.multi-input-group input:focus {
+    border-bottom: 1px solid #007bff;
+}
+
+/* Date Card */
+.date-card {
+    flex: 1.5;
+    flex-direction: row; /* תאריכים אחד ליד השני */
+    align-items: center;
+}
+.date-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.border-left {
+    border-left: 1px solid #eee;
+    padding-left: 10px;
+    margin-left: 10px;
+}
+.date-group input {
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
+    color: #02122c;
+    outline: none;
+    width: 100%;
+}
+
+/* Swap Icon Circle */
+.swap-icon {
+    width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+/* The Search Button */
+.search-btn {
+    background-color: #0770e3; /* כחול בוהק */
+    color: white;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: 700;
+    padding: 0 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.search-btn:hover {
+    background-color: #0056b3;
+}
+
+.search-options {
+    color: white;
+    margin-top: 15px;
+    font-size: 0.9rem;
+}
+.search-options label {
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .search-row-main {
+        flex-direction: column;
+        height: auto;
+        gap: 10px;
+    }
+    .swap-icon { display: none; }
+    .hero-title { font-size: 1.8rem; }
+
+    /* במובייל מבטלים את ה-padding הגבוה כדי לחסוך מקום */
+    .hero-section {
+        padding-top: 40px;
+        height: auto;
+        min-height: 100vh;
+    }
+}
