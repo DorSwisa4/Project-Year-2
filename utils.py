@@ -1,6 +1,14 @@
 import mysql.connector
 from classes import *
 
+# DB Configuration
+db_config = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': 'root',  # Your password
+    'database': 'airlinedb'
+}
+
 
 def add_to_sql(obj):
     """
@@ -10,14 +18,6 @@ def add_to_sql(obj):
 
     Returns: (Boolean, String) -> (Success?, Message)
     """
-
-    # DB Configuration
-    db_config = {
-        'host': 'localhost',
-        'user': 'root',
-        'password': 'root',  # Your password
-        'database': 'airlinedb'
-    }
 
     conn = None
     cursor = None
@@ -147,6 +147,34 @@ def add_to_sql(obj):
         print(f"Error inserting to SQL: {err}")
         return False, f"Database Error: {err}"
 
+    finally:
+        if cursor: cursor.close()
+
+
+
+def check_login(email, password):
+    conn = None
+    cursor = None
+
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        # The Query: Find a user where BOTH email AND password match
+        query = "SELECT first_name_en FROM RegisteredCustomers WHERE email = %s AND password = %s"
+        cursor.execute(query, (email, password))
+
+        result = cursor.fetchone()  # Get the first result (if any)
+
+        if result:
+            # result is a tuple like ('John',)
+            return result[0]  # Return the name 'John'
+        else:
+            return None  # No match found
+
+    except mysql.connector.Error as err:
+        print(f"Login Error: {err}")
+        return None
     finally:
         if cursor: cursor.close()
         if conn: conn.close()

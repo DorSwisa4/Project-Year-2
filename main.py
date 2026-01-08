@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import date
 from classes import RegisteredCustomer
-from utils import add_to_sql
+from utils import add_to_sql, check_login
 
 app = Flask(__name__)
+
+app.secret_key = 'SwisBoy'
 
 # --- 1. Database Configuration ---
 # Update these details to match your MySQL Workbench setup
@@ -13,7 +15,6 @@ db_config = {
     'host': 'localhost',
     'database': 'AirlineDB'
 }
-
 
 # --- 2. The Home Route ---
 # This serves your HTML page when you open the site
@@ -50,20 +51,47 @@ def signup():
             session['user_name'] = new_customer.first_name_en
 
             flash(message)  # "Registration successful!"
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('home'))
         else:
             flash(message)  # e.g., "Error: Manager phone found"
             return redirect(url_for('signup'))
 
 
-@app.route('/dashboard')
-def dashboard():
-    return "Dashboard"  # Placeholder
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # 1. Just showing the form
+    if request.method == 'GET':
+        return render_template('login.html')
+
+    # 2. Processing the Login
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        # Call our helper function
+        user_name = check_login(email, password)
+
+        if user_name:
+            # SUCCESS: Create the "Session" (The digital wristband)
+            session['user_email'] = email
+            session['user_name'] = user_name
+
+            flash(f"Welcome back, {user_name}!")
+            return redirect(url_for('home'))
+        else:
+            # FAILURE
+            flash("Invalid email or password. Please try again.")
+            return redirect(url_for('login'))
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# --- LOGOUT ROUTE (Crucial!) ---
+@app.route('/logout')
+def logout():
+    session.pop('user_email', None)
+    session.pop('user_name', None)
+    flash("You have been logged out.")
+    return redirect(url_for('home'))
 
-# --- 4. Run the App ---
+
 if __name__ == '__main__':
     app.run(debug=True)
