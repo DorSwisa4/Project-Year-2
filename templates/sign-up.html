@@ -1,134 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SkyHigh - Create Account</title>
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fly-Tau Create Account</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
-  <div class="container">
-    <div class="form-wrapper">
-
-      <header>
-        <h1>Create your account</h1>
-        <p>Join SkyHigh and start searching for your next flight.</p>
-      </header>
-
-      <form action="/register" method="POST" id="registerForm">
-
-        <div class="input-group">
-          <label for="first_name">First Name</label>
-          <input id="first_name" name="first_name" type="text" placeholder="John" required />
-        </div>
-
-        <div class="input-group">
-          <label for="last_name">Last Name</label>
-          <input id="last_name" name="last_name" type="text" placeholder="Doe" required />
-        </div>
-
-        <div class="input-group">
-          <label for="email">Email</label>
-          <input id="email" name="email" type="email" placeholder="john.doe@email.com" required />
-        </div>
-
-        <div class="input-group">
-          <label for="passport_number">Passport Number</label>
-          <input id="passport_number" name="passport_number" type="text" placeholder="A12345678" required />
-        </div>
-
-        <div class="input-group">
-          <label for="birth_date">Date of Birth</label>
-          <input id="birth_date" name="birth_date" type="date" required />
-        </div>
-
-        <div class="input-group">
-          <label for="password">Personal Password</label>
-          <input id="password" name="password" type="password" placeholder="Create a strong password" minlength="6" required />
-        </div>
-
-        <!-- Phones (dynamic) -->
-        <div class="phones-block">
-          <div class="phones-header">
-            <label>Phone Numbers</label>
-            <button type="button" class="small-btn" id="addPhoneBtn">
-              <i class="fas fa-plus"></i> Add phone
-            </button>
-          </div>
-
-          <div id="phonesContainer">
-            <div class="phone-row">
-              <input name="phones[]" type="tel" placeholder="+972 50-123-4567" required />
-              <button type="button" class="icon-btn remove-btn" aria-label="Remove phone" title="Remove">
-                <i class="fas fa-trash"></i>
-              </button>
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('home') }}" style="text-decoration: none;">
+                <h2 style="color:white; font-weight:800; margin: 0;">Fly-Tau</h2>
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ url_for('login') }}">Login</a>
             </div>
-          </div>
-
-          <p class="helper-text">You can add multiple phone numbers.</p>
         </div>
+    </nav>
 
-        <!-- Registration date -->
-        <div class="input-group">
-          <label for="registration_date">Registration Date</label>
-          <input id="registration_date" name="registration_date" type="date" readonly />
+    <div class="auth-wrapper bg-signup">
+        <div class="registration-container">
+
+            <div class="form-header">
+                <h2>Create An Account - Start Flying</h2>
+            </div>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages" style="background: #ffebee; color: #c62828; padding: 10px; margin-bottom: 15px; border-radius: 6px; text-align: center;">
+                        {% for message in messages %}
+                            <p style="margin: 0;">{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('signup') }}" method="POST">
+
+                <div class="form-group">
+                    <label for="email" class="required">Email Address</label>
+                    <input type="email" id="email" name="email" class="modern-input" placeholder="e.g. john@example.com" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fname" class="required">First Name (English)</label>
+                        <input type="text" id="fname" name="first_name" class="modern-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lname" class="required">Last Name (English)</label>
+                        <input type="text" id="lname" name="last_name" class="modern-input" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="passport" class="required">Passport Number</label>
+                        <input type="text" id="passport" name="passport_num" class="modern-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dob" class="required">Date of Birth</label>
+                        <input type="date" id="dob" name="birth_date" class="modern-input" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                <label for="password">
+                    Password
+                    <span style="font-size: 0.8rem; color: #666; font-weight: normal; margin-left: 5px;">
+                        (min 6 chars - letters in English or numbers)
+                    </span>
+                    <span style="color: red; font-weight: bold;">*</span>
+                </label>
+
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" class="modern-input" placeholder="Choose a strong password" required>
+                        <i class="fa-solid fa-eye toggle-icon" id="togglePassword"></i>
+                    </div>
+                </div>
+
+                <div class="form-group" id="phone-container">
+                    <label for="phone" class="required">Phone Numbers</label>
+                    <div class="phone-input-wrapper" style="margin-bottom: 10px;">
+                        <input type="tel" name="phones" class="modern-input" placeholder="Primary Phone Number" required>
+                    </div>
+                </div>
+
+                <button type="button" class="add-phone-btn" id="addPhoneBtn">+ Add Another Phone</button>
+
+                <button type="submit" class="submit-btn">Register Now</button>
+
+                <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+                    Already have an account? <a href="{{ url_for('login') }}" style="color:#00a8e8;">Login here</a>
+                </p>
+
+            </form>
         </div>
-
-        <button type="submit" class="submit-btn">Create Account</button>
-
-        <div class="footer-link">
-          If you already have an account, <a href="/login">click here to log in</a>.
-        </div>
-
-      </form>
     </div>
-  </div>
 
-  <script>
-    // Set today's date (YYYY-MM-DD) into registration_date
-    (function setToday() {
-      const el = document.getElementById("registration_date");
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, "0");
-      const dd = String(today.getDate()).padStart(2, "0");
-      el.value = `${yyyy}-${mm}-${dd}`;
-    })();
+    <script>
+        // 1. Password Toggle
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
 
-    // Phones: add/remove dynamic fields
-    const phonesContainer = document.getElementById("phonesContainer");
-    const addPhoneBtn = document.getElementById("addPhoneBtn");
+        if (togglePassword) {
+            togglePassword.addEventListener('click', function (e) {
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                this.classList.toggle('fa-eye-slash');
+                this.classList.toggle('fa-eye');
+            });
+        }
 
-    function wireRemoveButtons() {
-      const removeButtons = phonesContainer.querySelectorAll(".remove-btn");
-      removeButtons.forEach(btn => {
-        btn.onclick = () => {
-          const rows = phonesContainer.querySelectorAll(".phone-row");
-          // keep at least one row
-          if (rows.length <= 1) return;
-          btn.closest(".phone-row").remove();
-        };
-      });
-    }
+        // 2. Add Phone Number
+        const addPhoneBtn = document.getElementById('addPhoneBtn');
+        const phoneContainer = document.getElementById('phone-container');
 
-    addPhoneBtn.addEventListener("click", () => {
-      const row = document.createElement("div");
-      row.className = "phone-row";
-      row.innerHTML = `
-        <input name="phones[]" type="tel" placeholder="+972 50-123-4567" required />
-        <button type="button" class="icon-btn remove-btn" aria-label="Remove phone" title="Remove">
-          <i class="fas fa-trash"></i>
-        </button>
-      `;
-      phonesContainer.appendChild(row);
-      wireRemoveButtons();
-    });
+        if (addPhoneBtn) {
+            addPhoneBtn.addEventListener('click', function() {
+                const newInput = document.createElement('input');
+                newInput.type = 'tel';
 
-    wireRemoveButtons();
-  </script>
+                // IMPORTANT: This name must also be "phones" so Python groups them together
+                newInput.name = 'phones';
+
+                newInput.className = 'modern-input';
+                newInput.placeholder = 'Additional Phone Number';
+                newInput.style.marginTop = '10px';
+                phoneContainer.appendChild(newInput);
+            });
+        }
+    </script>
 
 </body>
 </html>
