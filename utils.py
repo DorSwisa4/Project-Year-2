@@ -149,7 +149,7 @@ def add_to_sql(obj):
 
     finally:
         if cursor: cursor.close()
-
+        if conn: conn.close()
 
 
 def check_login(email, password):
@@ -167,8 +167,7 @@ def check_login(email, password):
         result = cursor.fetchone()  # Get the first result (if any)
 
         if result:
-            # result is a tuple like ('John',)
-            return result[0]  # Return the name 'John'
+            return result[0]
         else:
             return None  # No match found
 
@@ -178,3 +177,39 @@ def check_login(email, password):
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
+
+
+def is_signup_valid(customer):
+    """
+    Checks requirements for a user sign-up.
+    """
+
+    # 1. First/Last Name: English letters only
+    if not (customer.first_name_en.isalpha() and customer.first_name_en.isascii()):
+        return False, "First name must contain only English letters."
+
+    if not (customer.last_name_en.isalpha() and customer.last_name_en.isascii()):
+        return False, "Last name must contain only English letters."
+
+    # 2. Passport: At least 6 characters (Length check)
+    if len(customer.passport_num) < 6:
+        return False, "Passport number must be at least 6 characters."
+
+    # 3. Password: At least 6 chars, English or numbers only
+    if len(customer.password) < 6:
+        return False, "Password must be at least 6 characters."
+
+    # .isalnum() checks for letters OR numbers
+    if not (customer.password.isalnum() and customer.password.isascii()):
+        return False, "Password must contain only English letters or numbers."
+
+    # 4. Phones: 10 digits exactly
+    if not customer.phones:
+        return False, "At least one phone number is required."
+
+    for phone in customer.phones:
+        # .isdigit() ensures 0-9 only
+        if not (phone.isdigit() and len(phone) == 10):
+            return False, f"Phone number '{phone}' is invalid. It must be exactly 10 digits."
+
+    return True, "Registration successful"
