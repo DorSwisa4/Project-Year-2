@@ -213,3 +213,75 @@ def is_signup_valid(customer):
             return False, f"Phone number '{phone}' is invalid. It must be exactly 10 digits."
 
     return True, "Registration successful"
+
+
+def get_flights(criteria=None):
+    if criteria is None:
+        criteria = {}
+
+    conn = None
+    cursor = None
+    flights_data = []
+
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        # שאילתה בסיסית - מביאה הכל
+        query = """
+            SELECT flight_id, src_country, src_city, src_airport, dst_country, dst_city, dst_airport, 
+                   departure_time, landing_time, status 
+            FROM Flights 
+            WHERE status = 'Active'
+        """
+        params = []
+
+        # --- הוספת כל אפשרויות הסינון ---
+
+        # 1. מדינת מוצא
+        if criteria.get('source_country'):
+            query += " AND src_country = %s"
+            params.append(criteria['source_country'])
+
+        # 2. עיר מוצא (חדש!)
+        if criteria.get('source_city'):
+            query += " AND src_city = %s"
+            params.append(criteria['source_city'])
+
+        # 3. שדה תעופה מוצא (חדש!)
+        if criteria.get('source_airport'):
+            query += " AND src_airport = %s"
+            params.append(criteria['source_airport'])
+
+        # 4. מדינת יעד
+        if criteria.get('dest_country'):
+            query += " AND dst_country = %s"
+            params.append(criteria['dest_country'])
+
+        # 5. עיר יעד (חדש!)
+        if criteria.get('dest_city'):
+            query += " AND dst_city = %s"
+            params.append(criteria['dest_city'])
+
+        # 6. שדה תעופה יעד (חדש!)
+        if criteria.get('dest_airport'):
+            query += " AND dst_airport = %s"
+            params.append(criteria['dest_airport'])
+
+        # 7. תאריך
+        if criteria.get('date'):
+            query += " AND DATE(departure_time) = %s"
+            params.append(criteria['date'])
+
+        query += " ORDER BY departure_time ASC"
+
+        cursor.execute(query, tuple(params))
+        flights_data = cursor.fetchall()
+
+    except mysql.connector.Error as err:
+        print(f"Error fetching flights: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+    return flights_data
