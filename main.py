@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import date
 from classes import RegisteredCustomer
-from utils import add_to_sql, check_login
+from utils import add_to_sql, check_login, is_signup_valid
 
 app = Flask(__name__)
 
@@ -29,7 +29,6 @@ def signup():
         return render_template('sign-up.html')
 
     if request.method == 'POST':
-        # 1. Create the Object (Now including phones!)
         new_customer = RegisteredCustomer(
             email=request.form['email'],
             first_name_en=request.form['first_name'],
@@ -38,22 +37,24 @@ def signup():
             passport_num=request.form['passport_num'],
             password=request.form['password'],
             birth_date=request.form['birth_date'],
-            phones=request.form.getlist('phones')  # Pass the list directly
+            phones=request.form.getlist('phones')
         )
 
-        # 2. Call the smart function
+        is_valid, error_message = is_signup_valid(new_customer)
+
+        if not is_valid:
+            flash(error_message)
+            return redirect(url_for('signup'))
+
         success, message = add_to_sql(new_customer)
 
-        # 3. Handle Result
         if success:
-            # Auto-login session setup
             session['user_email'] = new_customer.email
             session['user_name'] = new_customer.first_name_en
-
-            flash(message)  # "Registration successful!"
+            flash(message)
             return redirect(url_for('home'))
         else:
-            flash(message)  # e.g., "Error: Manager phone found"
+            flash(message)
             return redirect(url_for('signup'))
 
 
@@ -76,7 +77,6 @@ def login():
             session['user_email'] = email
             session['user_name'] = user_name
 
-            flash(f"Welcome back, {user_name}!")
             return redirect(url_for('home'))
         else:
             # FAILURE
@@ -89,7 +89,10 @@ def login():
 def logout():
     session.pop('user_email', None)
     session.pop('user_name', None)
-    flash("You have been logged out.")
+    return redirect(url_for('home'))
+
+@app.errorhandler(404)
+def error(e):
     return redirect(url_for('home'))
 
 
