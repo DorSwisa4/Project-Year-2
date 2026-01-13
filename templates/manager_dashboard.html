@@ -2,9 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fly-Tau - Manager's Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+
+<nav class="navbar">
+        <div class="nav-content">
+            <h2 style="color:white; font-weight:800;">Fly-Tau</h2>
+
+            <div class="nav-links">
+
+                {% if 'user_name' in session %}
+                    <span style="color: #00a8e8; margin-left: 20px; font-weight: bold;">
+                        Hello, {{ session['user_name'] }}
+                    </span>
+                    <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">Logout</a>
+            </div>
+
 
 </body>
 </html>

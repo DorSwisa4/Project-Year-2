@@ -190,6 +190,13 @@ body {
     background-position: top center;
 }
 
+.bg-manager-login {
+    /* Example: A view from the window */
+    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+                      url('manager-login background.png');
+    background-position: top center;
+    }
+
 /* Background for Login Page */
 .bg-login {
     /* Example: A runway at night or a cockpit */

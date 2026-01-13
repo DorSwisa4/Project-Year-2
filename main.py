@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import date
 from classes import RegisteredCustomer
-from utils import add_to_sql, check_login, is_signup_valid
+from utils import add_to_sql, check_login, is_signup_valid, check_manager_login
 
 app = Flask(__name__)
 
@@ -82,6 +82,30 @@ def login():
             # FAILURE
             flash("Invalid email or password. Please try again.")
             return redirect(url_for('login'))
+
+@app.route('/manager_login', methods = ['GET', 'POST'])
+def manager_login():
+    if request.method == 'GET':
+        return render_template('manager_login.html')
+
+    if request.method =='POST':
+        id_num = request.form['id_num']
+        password = request.form['password']
+
+        manager_name = check_manager_login(id_num, password)
+
+        if manager_name:
+            # Create a Manager Session
+            session['user_name'] = manager_name
+            session['user_id'] = id_num
+            session['is_manager'] = True  # specific flag to distinguish from customers
+
+            return redirect(url_for('manager_dashboard'))
+        else:
+            flash("Invalid Manager ID or Password")
+            return redirect(url_for('manager_login'))
+
+
 
 
 # --- LOGOUT ROUTE (Crucial!) ---

@@ -64,7 +64,7 @@ def add_to_sql(obj):
             # Commit the whole transaction
             conn.commit()
             print(f"Successfully registered user {obj.email}")
-            return True, "Registration successful!"
+            return True, ""
 
         # ==============================================================================
         # LOGIC FOR OTHER CLASSES (Standard Insert)
@@ -212,4 +212,33 @@ def is_signup_valid(customer):
         if not (phone.isdigit() and len(phone) == 10):
             return False, f"Phone number '{phone}' is invalid. It must be exactly 10 digits."
 
-    return True, "Registration successful"
+    return True, ""
+
+
+def check_manager_login(id_num, password):
+    """
+    Checks if a manager exists with the given ID and Password.
+    Returns the Manager's first name if valid, None otherwise.
+    """
+    conn = None
+    cursor = None
+
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        query = "SELECT first_name FROM Managers WHERE id_num = %s AND password = %s"
+        cursor.execute(query, (id_num, password))
+
+        result = cursor.fetchone()
+
+        if result:
+            return result[0]  # Return the first name
+        else:
+            return None
+
+    except mysql.connector.Error as err:
+        print(f"Manager Login Error: {err}")
+        return None
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
