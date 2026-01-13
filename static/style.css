@@ -185,6 +185,14 @@ body {
     background-position: top center;
 }
 
+.bg-manager-login {
+    /* Example: A view from the window */
+    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+                      url('manager-login background.png');
+    background-position: top center;
+    }
+
+/* Background for Login Page */
 .bg-login {
     background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
                       url('https://images.unsplash.com/photo-1538362333531-6b503aaf6115?q=80&w=1463&auto=format&fit=crop');

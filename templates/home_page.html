@@ -22,7 +22,7 @@
                 {% else %}
                     <a href="{{ url_for('signup') }}">Sign up</a>
                     <a href="{{ url_for('login') }}">Login</a>
-                    <a href="#">Manager Login</a>
+                    <a href="{{ url_for('manager_login') }}">Manager Login</a>
                 {% endif %}
             </div>
         </div>
@@ -74,10 +74,6 @@
                     <button type="submit" class="search-btn">Search</button>
                 </div>
 
-                <div class="search-options">
-                    <label><input type="checkbox"> Add nearby airports</label>
-                    <label><input type="checkbox"> Direct flights only</label>
-                </div>
             </form>
 
             <div class="scroll-indicator-container">

@@ -64,7 +64,7 @@ def add_to_sql(obj):
             # Commit the whole transaction
             conn.commit()
             print(f"Successfully registered user {obj.email}")
-            return True, "Registration successful!"
+            return True, ""
 
         # ==============================================================================
         # LOGIC FOR OTHER CLASSES (Standard Insert)
@@ -212,76 +212,33 @@ def is_signup_valid(customer):
         if not (phone.isdigit() and len(phone) == 10):
             return False, f"Phone number '{phone}' is invalid. It must be exactly 10 digits."
 
-    return True, "Registration successful"
+    return True, ""
 
 
-def get_flights(criteria=None):
-    if criteria is None:
-        criteria = {}
-
+def check_manager_login(id_num, password):
+    """
+    Checks if a manager exists with the given ID and Password.
+    Returns the Manager's first name if valid, None otherwise.
+    """
     conn = None
     cursor = None
-    flights_data = []
 
     try:
         conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
+        query = "SELECT first_name FROM Managers WHERE id_num = %s AND password = %s"
+        cursor.execute(query, (id_num, password))
 
-        # שאילתה בסיסית - מביאה הכל
-        query = """
-            SELECT flight_id, src_country, src_city, src_airport, dst_country, dst_city, dst_airport, 
-                   departure_time, landing_time, status 
-            FROM Flights 
-            WHERE status = 'Active'
-        """
-        params = []
+        result = cursor.fetchone()
 
-        # --- הוספת כל אפשרויות הסינון ---
-
-        # 1. מדינת מוצא
-        if criteria.get('source_country'):
-            query += " AND src_country = %s"
-            params.append(criteria['source_country'])
-
-        # 2. עיר מוצא (חדש!)
-        if criteria.get('source_city'):
-            query += " AND src_city = %s"
-            params.append(criteria['source_city'])
-
-        # 3. שדה תעופה מוצא (חדש!)
-        if criteria.get('source_airport'):
-            query += " AND src_airport = %s"
-            params.append(criteria['source_airport'])
-
-        # 4. מדינת יעד
-        if criteria.get('dest_country'):
-            query += " AND dst_country = %s"
-            params.append(criteria['dest_country'])
-
-        # 5. עיר יעד (חדש!)
-        if criteria.get('dest_city'):
-            query += " AND dst_city = %s"
-            params.append(criteria['dest_city'])
-
-        # 6. שדה תעופה יעד (חדש!)
-        if criteria.get('dest_airport'):
-            query += " AND dst_airport = %s"
-            params.append(criteria['dest_airport'])
-
-        # 7. תאריך
-        if criteria.get('date'):
-            query += " AND DATE(departure_time) = %s"
-            params.append(criteria['date'])
-
-        query += " ORDER BY departure_time ASC"
-
-        cursor.execute(query, tuple(params))
-        flights_data = cursor.fetchall()
+        if result:
+            return result[0]  # Return the first name
+        else:
+            return None
 
     except mysql.connector.Error as err:
-        print(f"Error fetching flights: {err}")
+        print(f"Manager Login Error: {err}")
+        return None
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
-
-    return flights_data
