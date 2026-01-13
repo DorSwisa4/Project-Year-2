@@ -9,33 +9,30 @@
 </head>
 <body>
 
-<nav class="navbar">
+    <nav class="navbar">
         <div class="nav-content">
             <h2 style="color:white; font-weight:800;">Fly-Tau</h2>
 
             <div class="nav-links">
-
                 {% if 'user_name' in session %}
                     <span style="color: #00a8e8; margin-left: 20px; font-weight: bold;">
                         Hello, {{ session['user_name'] }}
                     </span>
                     <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">Logout</a>
-
                 {% else %}
                     <a href="{{ url_for('signup') }}">Sign up</a>
                     <a href="{{ url_for('login') }}">Login</a>
                     <a href="{{ url_for('manager_login') }}">Manager Login</a>
                 {% endif %}
-                </div>
+            </div>
         </div>
     </nav>
 
-    <div class="hero-section">
+    <div class="hero-section" id="top-of-page">
         <div class="hero-content">
             <h1 class="hero-title">Millions of cheap flights. One simple search.</h1>
 
             <form action="/search" method="POST" class="search-widget">
-
                 <div class="search-row-top">
                     <input type="text" name="flight_num" placeholder="Flight Number (Optional)" class="transparent-input">
                 </div>
@@ -44,9 +41,9 @@
                     <div class="input-card location-card">
                         <label>From</label>
                         <div class="multi-input-group">
-                            <input type="text" name="source_country" placeholder="Country" required>
-                            <input type="text" name="source_city" placeholder="City" required>
-                            <input type="text" name="source_airport" placeholder="Airport" required>
+                            <input type="text" name="source_country" placeholder="Country">
+                            <input type="text" name="source_city" placeholder="City">
+                            <input type="text" name="source_airport" placeholder="Airport">
                         </div>
                     </div>
 
@@ -57,16 +54,16 @@
                     <div class="input-card location-card">
                         <label>To</label>
                         <div class="multi-input-group">
-                            <input type="text" name="dest_country" placeholder="Country" required>
-                            <input type="text" name="dest_city" placeholder="City" required>
-                            <input type="text" name="dest_airport" placeholder="Airport" required>
+                            <input type="text" name="dest_country" placeholder="Country">
+                            <input type="text" name="dest_city" placeholder="City">
+                            <input type="text" name="dest_airport" placeholder="Airport">
                         </div>
                     </div>
 
                     <div class="input-card date-card">
                         <div class="date-group">
                             <label>Depart</label>
-                            <input type="date" name="exit_date" required>
+                            <input type="date" name="exit_date">
                         </div>
                         <div class="date-group border-left">
                             <label>Return</label>
@@ -74,14 +71,78 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="search-btn">
-                        Search
-                    </button>
+                    <button type="submit" class="search-btn">Search</button>
                 </div>
 
             </form>
+
+            <div class="scroll-indicator-container">
+                <a href="#results-area" class="scroll-link">
+                    Scroll down to view all flights <i class="fas fa-chevron-down"></i>
+                </a>
+            </div>
         </div>
     </div>
+
+    <div id="results-area" class="sky-background">
+        <h2><i class="fas fa-plane"></i> Available Flights</h2>
+
+        <div class="scrollable-flights">
+
+{% if no_results_found %}
+                <div class="no-results-box">
+                    <h3><i class="fas fa-plane-slash"></i> We couldn't find exactly what you were looking for...</h3>
+                    <p style="font-size: 1.1rem; margin-top: 10px;">
+                        ...but don't worry! You are welcome to explore all the other wonderful flights we have to offer below.
+                    </p>
+
+                    <a href="#top-of-page" class="back-to-top-btn">
+                        <i class="fas fa-arrow-up"></i> Search Again
+                    </a>
+                </div>
+            {% endif %}
+
+            {% if flights %}
+                {% for flight in flights %}
+                <div class="flight-card">
+                    <div class="flight-info">
+                        <h3>
+                            <i class="fas fa-plane-departure" style="margin-right:10px;"></i> {{ flight.src_city }}
+                            <span style="color: #aaa; margin: 0 15px; font-size: 0.8em;"><i class="fas fa-long-arrow-alt-right"></i></span>
+                            {{ flight.dst_city }} <i class="fas fa-plane-arrival" style="margin-left:10px;"></i>
+                        </h3>
+                        <div class="sub-info">
+                            <span class="time-badge">
+                                <i class="far fa-clock"></i> {{ flight.departure_time }}
+                            </span>
+                            <span class="flight-id-badge">
+                                ID: {{ flight.flight_id }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flight-action">
+                        <a href="/order/{{ flight.flight_id }}" class="book-btn">
+                            Book Now
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+        </div>
+    </div>
+
+    <script>
+        {% if scroll_to_results %}
+            document.addEventListener("DOMContentLoaded", function() {
+                const resultsElement = document.getElementById("results-area");
+                if (resultsElement) {
+                    resultsElement.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+            });
+        {% endif %}
+    </script>
 
 </body>
 </html>

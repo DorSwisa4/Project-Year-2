@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import date
 from classes import RegisteredCustomer
-from utils import add_to_sql, check_login, is_signup_valid, check_manager_login
+from utils import add_to_sql, check_login, is_signup_valid, get_flights, check_manager_login
 
 app = Flask(__name__)
 
@@ -16,11 +16,41 @@ db_config = {
     'database': 'AirlineDB'
 }
 
+
 # --- 2. The Home Route ---
 # This serves your HTML page when you open the site
 @app.route('/')
 def home():
-    return render_template('home_page.html')
+    # CHANGE 1: Get all active flights from DB when loading the page
+    all_flights = get_flights()
+    # Pass the 'flights' data to the HTML template
+    return render_template('home_page.html', flights=all_flights)
+
+
+@app.route('/search', methods=['POST'])
+def search_results():
+    search_params = {
+        'source_country': request.form.get('source_country'),
+        'source_city': request.form.get('source_city'),
+        'source_airport': request.form.get('source_airport'),
+        'dest_country': request.form.get('dest_country'),
+        'dest_city': request.form.get('dest_city'),
+        'dest_airport': request.form.get('dest_airport'),
+        'date': request.form.get('exit_date')
+    }
+
+    clean_params = {k: v for k, v in search_params.items() if v and v.strip() != ""}
+    results = get_flights(clean_params)
+
+    no_results_found = False
+
+    # השינוי: אם אין תוצאות, טען את כל הטיסות הפעילות
+    if not results:
+        results = get_flights()  # מביא הכל
+        no_results_found = True  # מדליק דגל כדי שנוכל להציג הודעה מתאימה
+
+    # שולחים ל-HTML גם את הטיסות וגם את הדגל
+    return render_template('home_page.html', flights=results, scroll_to_results=True, no_results_found=no_results_found)
 
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -114,6 +144,7 @@ def logout():
     session.pop('user_email', None)
     session.pop('user_name', None)
     return redirect(url_for('home'))
+
 
 @app.errorhandler(404)
 def error(e):

@@ -52,7 +52,6 @@ body {
    ========================================= */
 .hero-section {
     position: relative;
-    /* This is the Home Page Image (Boarding the plane) */
     background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),
                       url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop');
     background-size: cover;
@@ -60,13 +59,17 @@ body {
     height: 100vh;
     display: flex;
     justify-content: center;
-    padding-top: 140px; /* Pushes search bar down */
+    padding-top: 140px;
 }
 
 .hero-content {
     width: 100%;
     max-width: 1100px;
     padding: 20px;
+    /* Allow stacking for the scroll indicator */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .hero-title {
@@ -76,17 +79,19 @@ body {
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     font-weight: 800;
     text-align: center;
+    width: 100%;
 }
 
 /* =========================================
    4. SEARCH WIDGET (The Bar)
    ========================================= */
 .search-widget {
-    background: rgba(2, 18, 44, 0.7); /* Dark semi-transparent box */
+    background: rgba(2, 18, 44, 0.7);
     padding: 25px;
     border-radius: 12px;
     backdrop-filter: blur(8px);
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    width: 100%;
 }
 
 .search-row-top { margin-bottom: 15px; }
@@ -107,7 +112,6 @@ body {
     gap: 10px;
 }
 
-/* White Cards inside Search Bar */
 .input-card {
     background: white;
     padding: 10px 15px;
@@ -163,28 +167,19 @@ body {
 
 
 /* =========================================
-   5. AUTH PAGES (Login / Signup ONLY)
+   5. AUTH PAGES
    ========================================= */
-
-/* Use this wrapper specifically for your Login/Signup pages */
-/* --- 1. The Shared Wrapper (Layout Only) --- */
 .auth-wrapper {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    /* Keep these settings shared */
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
 }
 
-/* --- 2. Specific Backgrounds --- */
-
-/* Background for Sign Up Page */
 .bg-signup {
-    /* Example: A view from the window */
     background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
                       url('sign-up background.jpg');
     background-position: top center;
@@ -199,13 +194,9 @@ body {
 
 /* Background for Login Page */
 .bg-login {
-    /* Example: A runway at night or a cockpit */
     background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
-                      url('https://images.unsplash.com/photo-1538362333531-6b503aaf6115?q=80&w=1463&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+                      url('https://images.unsplash.com/photo-1538362333531-6b503aaf6115?q=80&w=1463&auto=format&fit=crop');
 }
-
-/* Background for Home Page (Already handled by .hero-section) */
-/* You don't need to change .hero-section, it works fine as is. */
 
 .registration-container {
     background: rgba(255, 255, 255, 0.95);
@@ -217,7 +208,6 @@ body {
     margin: 20px;
 }
 
-/* Input Styles for Auth */
 .modern-input {
     width: 100%;
     padding: 12px 15px;
@@ -249,4 +239,144 @@ label.required::after {
     color: red;
     font-weight: bold;
     margin-left: 4px;
+}
+
+/* =========================================
+   6. NEW STYLES (FLIGHT LIST & ANIMATIONS)
+   ========================================= */
+
+/* רקע מעניין לרשימת הטיסות - גרדיאנט שמיים */
+.sky-background {
+    background: linear-gradient(180deg, #fdfbfb 0%, #ebedee 100%);
+    border-top: 5px solid #00a8e8;
+    padding: 60px 10%;
+    min-height: 80vh;
+}
+
+/* כותרת האזור */
+.sky-background h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2rem;
+}
+
+/* המיכל של הרשימה */
+.scrollable-flights {
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 15px;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.9);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* כרטיס טיסה בודד */
+.flight-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px;
+    border-bottom: 1px solid #eee;
+    transition: background 0.3s;
+}
+
+.flight-card:hover {
+    background-color: #f9fbff;
+}
+
+.flight-info h3 {
+    margin: 0;
+    color: #00a8e8;
+    font-size: 1.4rem;
+}
+
+.flight-info .sub-info {
+    margin-top: 10px;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+.time-badge {
+    background: #e1f5fe;
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: #0277bd;
+}
+
+.flight-id-badge {
+    margin-left: 15px;
+    font-weight: bold;
+    color: #666;
+}
+
+/* כפתור הזמנה */
+.book-btn {
+    background-color: #00a8e8;
+    color: white;
+    padding: 12px 30px;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,168,232,0.3);
+    transition: transform 0.2s;
+}
+
+.book-btn:hover {
+    transform: translateY(-2px);
+    background-color: #0095ce;
+}
+
+/* הודעת גלילה (Scroll Indicator) */
+.scroll-indicator-container {
+    text-align: center;
+    margin-top: 30px;
+    animation: bounce 2s infinite;
+}
+
+.scroll-link {
+    color: white;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 20px;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+}
+
+.scroll-link:hover {
+    background: rgba(0, 168, 232, 0.8);
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+    40% {transform: translateY(-10px);}
+    60% {transform: translateY(-5px);}
+}
+
+/* הודעת 'לא נמצאו תוצאות' */
+.no-results-box {
+    background: #fff0f0; /* רקע אדמדם בהיר */
+    padding: 20px;
+    text-align: center;
+    border-radius: 10px 10px 0 0; /* עגול למעלה */
+    border-bottom: 2px solid #ffcccc;
+}
+
+.no-results-box h3 {
+    color: #d32f2f;
+    margin-bottom: 5px;
+}
+
+.back-to-top-btn {
+    display: inline-block;
+    margin-top: 10px;
+    color: #d32f2f;
+    text-decoration: underline;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 1rem;
 }
