@@ -41,9 +41,17 @@
                     <div class="input-card location-card">
                         <label>From</label>
                         <div class="multi-input-group">
-                            <input type="text" name="source_country" placeholder="Country">
-                            <input type="text" name="source_city" placeholder="City">
-                            <input type="text" name="source_airport" placeholder="Airport">
+                            <input type="text" name="source_country" id="src_country" list="list_src_country"
+                                   placeholder="Country" autocomplete="off">
+                            <datalist id="list_src_country"></datalist>
+
+                            <input type="text" name="source_city" id="src_city" list="list_src_city"
+                                   placeholder="City" onfocus="loadOptions('src', 'city')" autocomplete="off">
+                            <datalist id="list_src_city"></datalist>
+
+                            <input type="text" name="source_airport" id="src_airport" list="list_src_airport"
+                                   placeholder="Airport" onfocus="loadOptions('src', 'airport')" autocomplete="off">
+                            <datalist id="list_src_airport"></datalist>
                         </div>
                     </div>
 
@@ -54,9 +62,17 @@
                     <div class="input-card location-card">
                         <label>To</label>
                         <div class="multi-input-group">
-                            <input type="text" name="dest_country" placeholder="Country">
-                            <input type="text" name="dest_city" placeholder="City">
-                            <input type="text" name="dest_airport" placeholder="Airport">
+                            <input type="text" name="dest_country" id="dst_country" list="list_dst_country"
+                                   placeholder="Country" autocomplete="off">
+                            <datalist id="list_dst_country"></datalist>
+
+                            <input type="text" name="dest_city" id="dst_city" list="list_dst_city"
+                                   placeholder="City" onfocus="loadOptions('dst', 'city')" autocomplete="off">
+                            <datalist id="list_dst_city"></datalist>
+
+                            <input type="text" name="dest_airport" id="dst_airport" list="list_dst_airport"
+                                   placeholder="Airport" onfocus="loadOptions('dst', 'airport')" autocomplete="off">
+                            <datalist id="list_dst_airport"></datalist>
                         </div>
                     </div>
 
@@ -89,7 +105,7 @@
 
         <div class="scrollable-flights">
 
-{% if no_results_found %}
+            {% if no_results_found %}
                 <div class="no-results-box">
                     <h3><i class="fas fa-plane-slash"></i> We couldn't find exactly what you were looking for...</h3>
                     <p style="font-size: 1.1rem; margin-top: 10px;">
@@ -142,6 +158,43 @@
                 }
             });
         {% endif %}
+
+        document.addEventListener("DOMContentLoaded", function() {
+            loadOptions('src', 'country');
+            loadOptions('dst', 'country');
+        });
+
+        function loadOptions(side, type) {
+
+            let parentVal = "";
+
+            if (type === 'city') {
+                let countryInput = document.getElementById(`${side}_country`);
+                if (countryInput) parentVal = countryInput.value;
+            }
+            else if (type === 'airport') {
+                let cityInput = document.getElementById(`${side}_city`);
+                if (cityInput) parentVal = cityInput.value;
+            }
+            // אם אנחנו במדינה -> אין אבא (parentVal נשאר ריק)
+
+
+            fetch(`/api/get-options?side=${side === 'src' ? 'source' : 'dest'}&type=${type}&parent_val=${parentVal}`)
+                .then(response => response.json())
+                .then(data => {
+                    let listId = `list_${side}_${type}`;
+                    let dataListElement = document.getElementById(listId);
+
+                    dataListElement.innerHTML = '';
+
+                    data.forEach(item => {
+                        let option = document.createElement("option");
+                        option.value = item;
+                        dataListElement.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
     </script>
 
 </body>
