@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import date
 from classes import RegisteredCustomer
-from utils import add_to_sql, check_login, is_signup_valid, get_flights, check_manager_login
+from utils import add_to_sql, check_login, is_signup_valid, get_flights, get_unique_locations, check_manager_login
 
 app = Flask(__name__)
 
@@ -30,6 +30,7 @@ def home():
 @app.route('/search', methods=['POST'])
 def search_results():
     search_params = {
+        'flight_id': request.form.get('flight_num'),
         'source_country': request.form.get('source_country'),
         'source_city': request.form.get('source_city'),
         'source_airport': request.form.get('source_airport'),
@@ -51,6 +52,26 @@ def search_results():
 
     # שולחים ל-HTML גם את הטיסות וגם את הדגל
     return render_template('home_page.html', flights=results, scroll_to_results=True, no_results_found=no_results_found)
+
+
+@app.route('/api/get-options')
+def get_options():
+    request_type = request.args.get('type')
+    parent_val = request.args.get('parent_val')
+    location_side = request.args.get('side')
+
+    data = []
+
+    if request_type == 'country':
+        data = get_unique_locations('country', location_type=location_side)
+
+    elif request_type == 'city':
+        data = get_unique_locations('city', 'country', parent_val, location_type=location_side)
+
+    elif request_type == 'airport':
+        data = get_unique_locations('airport', 'city', parent_val, location_type=location_side)
+
+    return jsonify(data)
 
 
 @app.route('/signup', methods=['GET', 'POST'])

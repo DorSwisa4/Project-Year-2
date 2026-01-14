@@ -226,7 +226,6 @@ def get_flights(criteria=None):
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
 
-        # שאילתה בסיסית - מביאה הכל
         query = """
             SELECT flight_id, src_country, src_city, src_airport, dst_country, dst_city, dst_airport, 
                    departure_time, landing_time, status 
@@ -235,42 +234,37 @@ def get_flights(criteria=None):
         """
         params = []
 
-        # --- הוספת כל אפשרויות הסינון ---
-
-        # 1. מדינת מוצא
         if criteria.get('source_country'):
             query += " AND src_country = %s"
             params.append(criteria['source_country'])
 
-        # 2. עיר מוצא (חדש!)
         if criteria.get('source_city'):
             query += " AND src_city = %s"
             params.append(criteria['source_city'])
 
-        # 3. שדה תעופה מוצא (חדש!)
         if criteria.get('source_airport'):
             query += " AND src_airport = %s"
             params.append(criteria['source_airport'])
 
-        # 4. מדינת יעד
         if criteria.get('dest_country'):
             query += " AND dst_country = %s"
             params.append(criteria['dest_country'])
 
-        # 5. עיר יעד (חדש!)
         if criteria.get('dest_city'):
             query += " AND dst_city = %s"
             params.append(criteria['dest_city'])
 
-        # 6. שדה תעופה יעד (חדש!)
         if criteria.get('dest_airport'):
             query += " AND dst_airport = %s"
             params.append(criteria['dest_airport'])
 
-        # 7. תאריך
         if criteria.get('date'):
             query += " AND DATE(departure_time) = %s"
             params.append(criteria['date'])
+
+        if criteria.get('flight_id'):
+            query += " AND flight_id = %s"
+            params.append(criteria['flight_id'])
 
         query += " ORDER BY departure_time ASC"
 
@@ -285,6 +279,48 @@ def get_flights(criteria=None):
 
     return flights_data
 
+
+# בתוך utils.py
+
+def get_unique_locations(column, filter_col=None, filter_val=None, location_type='source'):
+    """
+    שולפת ערכים ייחודיים (מדינות/ערים/שדות) מטבלת קווי התפעול.
+    column: העמודה המבוקשת (למשל 'city')
+    filter_col: העמודה שלפיה מסננים (למשל 'country')
+    filter_val: הערך לסינון (למשל 'Israel')
+    location_type: 'source' (מוצא) או 'dest' (יעד)
+    """
+    conn = None
+    cursor = None
+    results = []
+
+    prefix = "src" if location_type == 'source' else "dst"
+    target_col = f"{prefix}_{column}"
+
+    query = f"SELECT DISTINCT {target_col} FROM OperatingLines"
+    params = []
+
+    if filter_col and filter_val:
+        filter_column_name = f"{prefix}_{filter_col}"
+        query += f" WHERE {filter_column_name} = %s"
+        params.append(filter_val)
+
+    query += f" ORDER BY {target_col}"
+
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        cursor.execute(query, tuple(params))
+
+        results = [row[0] for row in cursor.fetchall()]
+
+    except mysql.connector.Error as err:
+        print(f"Error fetching locations: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+    return results
 
 def check_manager_login(id_num, password):
     """
