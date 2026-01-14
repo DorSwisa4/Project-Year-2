@@ -135,14 +135,20 @@ def manager_login():
             flash("Invalid Manager ID or Password")
             return redirect(url_for('manager_login'))
 
+#@app.route('/manager-dashboard', methods = ['GET', 'POST'])
+#def dashboard():
+ #   if request.method == 'GET':
+#      return render_template('manager_dashboard.html')
+
+
+
 
 
 
 # --- LOGOUT ROUTE (Crucial!) ---
 @app.route('/logout')
 def logout():
-    session.pop('user_email', None)
-    session.pop('user_name', None)
+    session.clear()
     return redirect(url_for('home'))
 
 
