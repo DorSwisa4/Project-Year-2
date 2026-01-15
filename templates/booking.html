@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Flight - {{ flight.flight_id }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="booking-page-body">
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('home') }}" style="text-decoration: none;">
+                <h2 style="color:white; font-weight:800;">Fly-Tau</h2>
+            </a>
+
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}">Home</a>
+
+                {% if session.get('user_name') %}
+                    <span style="color: #00a8e8; margin-left: 20px; font-weight: bold;">
+                        {{ session['user_name'] }}
+                    </span>
+                    <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="booking-container">
+        <h1>Complete Your Booking</h1>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for message in messages %}
+                <div class="alert-box">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="flight-summary">
+            <h3>Flight: {{ flight.flight_id }}</h3>
+            <p>From: <strong>{{ flight.src_city }}</strong> To: <strong>{{ flight.dst_city }}</strong></p>
+            <p>Date: {{ flight.departure_time }}</p>
+            <p>Plane: {{ flight.manufacturer }} ({{ flight.size }})</p>
+        </div>
+
+        <form action="/order/{{ flight.flight_id }}" method="POST">
+
+            <div class="form-section">
+                <h2>Passenger Details</h2>
+
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required
+                           value="{{ user.email if user else '' }}"
+                           {% if user %}readonly{% endif %}>
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label>First Name (En)</label>
+                        <input type="text" name="first_name" pattern="[A-Za-z]+" title="English letters only" required
+                               value="{{ user.first_name_en if user else '' }}"
+                               {% if user %}readonly{% endif %}>
+                    </div>
+                    <div class="input-group">
+                        <label>Last Name (En)</label>
+                        <input type="text" name="last_name" pattern="[A-Za-z]+" title="English letters only" required
+                               value="{{ user.last_name_en if user else '' }}"
+                               {% if user %}readonly{% endif %}>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Phone Number(s)</label>
+                    <div id="phone-container">
+                        {% if user and user.phones %}
+                            {% for phone in user.phones %}
+                                <input type="text" name="phones[]" value="{{ phone }}" readonly class="phone-input">
+                            {% endfor %}
+                        {% else %}
+                            <input type="text" name="phones[]" pattern="\d{10}" title="10 digits number" required placeholder="0501234567" class="phone-input">
+                        {% endif %}
+                    </div>
+
+                    {% if not user %}
+                        <button type="button" onclick="addPhoneField()" class="add-phone-btn">+ Add another phone</button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Select Tickets</h2>
+
+                <div class="row">
+                    <div class="ticket-option">
+                        <label>Economy (${{ flight.price_economy }})</label>
+                        <input type="number" name="tickets_economy" min="0" value="0">
+                    </div>
+
+                    {% if flight.size == 'Big' %}
+                    <div class="ticket-option business" style="background: #eef;">
+                        <label>Business (${{ flight.price_business }})</label>
+                        <input type="number" name="tickets_business" min="0" value="0">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <button type="submit" class="submit-booking-btn">Proceed to Seat Selection</button>
+        </form>
+    </div>
+
+    <script>
+        function addPhoneField() {
+            const container = document.getElementById('phone-container');
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = 'phones[]';
+            input.pattern = '\\d{10}';
+            input.placeholder = 'Additional Phone';
+            input.className = 'phone-input';
+            input.style.marginTop = '5px';
+            container.appendChild(input);
+        }
+    </script>
+
+</body>
+</html>
