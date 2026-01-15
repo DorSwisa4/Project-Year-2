@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import date
 from classes import RegisteredCustomer
-from utils import add_to_sql, check_login, is_signup_valid, get_flights, get_unique_locations, check_manager_login
+from utils import add_to_sql, check_login, is_signup_valid, get_flights, get_unique_locations, check_manager_login, get_flight_details, get_user_details, is_manager_phone
 
 app = Flask(__name__)
 
@@ -73,6 +73,48 @@ def get_options():
 
     return jsonify(data)
 
+
+@app.route('/order/<flight_id>', methods=['GET', 'POST'])
+def order_page(flight_id):
+    if request.method == 'GET':
+        flight = get_flight_details(flight_id)
+        if not flight:
+            flash("Flight not found.")
+            return redirect(url_for('home'))
+
+        user = None
+        if 'user_email' in session:
+            user = get_user_details(session['user_email'])
+
+        return render_template('booking.html', flight=flight, user=user)
+
+    if request.method == 'POST':
+        phones = request.form.getlist('phones[]')
+
+        for phone in phones:
+            clean_phone = phone.strip()
+            if clean_phone and is_manager_phone(clean_phone):
+                flash(
+                    f"The phone number {clean_phone} is associated with a Manager account and cannot be used for booking.")
+                return redirect(url_for('order_page', flight_id=flight_id))
+
+        booking_data = {
+            'flight_id': flight_id,
+            'email': request.form.get('email'),
+            'first_name': request.form.get('first_name'),
+            'last_name': request.form.get('last_name'),
+            'phones': phones,
+            'tickets_economy': int(request.form.get('tickets_economy', 0)),
+            'tickets_business': int(request.form.get('tickets_business', 0))
+        }
+
+        if booking_data['tickets_economy'] == 0 and booking_data['tickets_business'] == 0:
+            flash("You must select at least one ticket.")
+            return redirect(url_for('order_page', flight_id=flight_id))
+
+        session['temp_booking'] = booking_data
+
+        return "Redirecting to Seat Selection Page... (Next Step)"
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():

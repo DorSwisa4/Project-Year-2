@@ -280,7 +280,6 @@ def get_flights(criteria=None):
     return flights_data
 
 
-# בתוך utils.py
 
 def get_unique_locations(column, filter_col=None, filter_val=None, location_type='source'):
     """
@@ -349,3 +348,103 @@ def check_manager_login(id_num, password):
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
+
+
+def get_flight_details(flight_id):
+    conn = None
+    cursor = None
+    flight = None
+
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        # Join Flights with Planes to know the plane size (Big/Small)
+        query = """
+            SELECT F.*, P.size, P.manufacturer 
+            FROM Flights F
+            JOIN Planes P ON F.plane_id = P.plane_id
+            WHERE F.flight_id = %s
+        """
+        cursor.execute(query, (flight_id,))
+        flight = cursor.fetchone()
+
+        # Mocking prices for now (as requested)
+        if flight:
+            flight['price_economy'] = 150  # Base price example
+            flight['price_business'] = 400 if flight['size'] == 'Big' else 0
+
+    except mysql.connector.Error as err:
+        print(f"Error fetching flight details: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+    return flight
+
+
+def get_user_details(email):
+    conn = None
+    cursor = None
+    user_data = None
+
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        # Get basic info
+        query_user = """
+            SELECT email, first_name_en, last_name_en 
+            FROM RegisteredCustomers 
+            WHERE email = %s
+        """
+        cursor.execute(query_user, (email,))
+        user_data = cursor.fetchone()
+
+        if user_data:
+            # Get phones
+            query_phones = "SELECT phone_number FROM RegisteredPhones WHERE email = %s"
+            cursor.execute(query_phones, (email,))
+            phones_result = cursor.fetchall()  # Returns list of dicts [{'phone_number': '...'}, ...]
+
+            # Convert to simple list
+            user_data['phones'] = [p['phone_number'] for p in phones_result]
+
+    except mysql.connector.Error as err:
+        print(f"Error fetching user details: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+    return user_data
+
+
+def is_manager_phone(phone_number):
+    """
+    Checks if a given phone number belongs to a Manager in the database.
+    Ignores hyphens in both the input and the database record.
+    Returns True if it exists, False otherwise.
+    """
+    conn = None
+    cursor = None
+    exists = False
+
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        clean_input = phone_number.replace('-', '').strip()
+
+        query = "SELECT id_num FROM Managers WHERE REPLACE(phone, '-', '') = %s"
+        cursor.execute(query, (clean_input,))
+
+        if cursor.fetchone():
+            exists = True
+
+    except mysql.connector.Error as err:
+        print(f"Error checking manager phone: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+    return exists
