@@ -3,25 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fly-Tau - Manager's Dashboard</title>
+    <title>Fly-Tau - Manager Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="dashboard-body">
 
-<nav class="navbar">
+    <nav class="navbar">
         <div class="nav-content">
-            <h2 style="color:white; font-weight:800;">Fly-Tau</h2>
+            <a href="{{ url_for('manager_dashboard') }}" style="text-decoration: none;">
+                <h2 style="color:white; font-weight:800;">Fly-Tau<span style="font-weight:300; font-size: 0.8em; opacity: 0.8;">| Management</span></h2>
+            </a>
 
             <div class="nav-links">
+                <span style="color: #00a8e8; margin-right: 20px; font-weight: bold;">
+                    <i class="fas fa-user-tie"></i> {{ session['user_name'] }}
+                </span>
+                <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
 
-                {% if 'user_name' in session %}
-                    <span style="color: #00a8e8; margin-left: 20px; font-weight: bold;">
-                        Hello, {{ session['user_name'] }}
-                    </span>
-                    <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">Logout</a>
+    <div class="dashboard-container">
+
+        <div class="actions-toolbar">
+
+            <a href="{{ url_for('add_employee') }}" class="toolbar-btn">
+                <i class="fas fa-user-plus"></i>
+                <span>Add Employee</span>
+            </a>
+
+            <a href="{{ url_for('add_plane') }}" class="toolbar-btn">
+                <i class="fas fa-plane"></i>
+                <span>Add Plane</span>
+            </a>
+
+            <a href="#" class="toolbar-btn">
+                <i class="fas fa-route"></i>
+                <span>New Line</span>
+            </a>
+
+            <a href="#" class="toolbar-btn">
+                <i class="fas fa-plane-departure"></i>
+                <span>Schedule Flight</span>
+            </a>
+
+            <a href="#" class="toolbar-btn danger">
+                <i class="fas fa-ban"></i>
+                <span>Cancel Flight</span>
+            </a>
+
+        </div>
+
+        <h3 style="color: #444; margin-bottom: 15px; border-left: 4px solid #00a8e8; padding-left: 10px;">
+            Performance Overview
+        </h3>
+
+        <div class="dashboard-grid">
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h4>Revenue</h4>
+                    <button class="chart-opt"><i class="fas fa-ellipsis-h"></i></button>
+                </div>
+                <div class="chart-placeholder">
+                    [Revenue Line Chart]
+                </div>
             </div>
 
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h4>Tickets by Class</h4>
+                    <button class="chart-opt"><i class="fas fa-ellipsis-h"></i></button>
+                </div>
+                <div class="chart-placeholder">
+                    [Pie Chart]
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h4>Top Destinations</h4>
+                    <button class="chart-opt"><i class="fas fa-ellipsis-h"></i></button>
+                </div>
+                <div class="chart-placeholder">
+                    [Bar Chart]
+                </div>
+            </div>
+
+        </div>
+
+    </div>
 
 </body>
 </html>

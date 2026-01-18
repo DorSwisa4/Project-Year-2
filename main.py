@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import date
-from classes import RegisteredCustomer
+from classes import RegisteredCustomer, EmployeeFactory, Plane
 from utils import add_to_sql, check_login, is_signup_valid, get_flights, get_unique_locations, check_manager_login, get_flight_details, get_user_details, is_manager_phone
 
 app = Flask(__name__)
@@ -21,10 +21,11 @@ db_config = {
 # This serves your HTML page when you open the site
 @app.route('/')
 def home():
-    # CHANGE 1: Get all active flights from DB when loading the page
-    all_flights = get_flights()
-    # Pass the 'flights' data to the HTML template
-    return render_template('home_page.html', flights=all_flights)
+    if session.get('is_manager'):
+        return redirect(url_for('manager_dashboard'))
+    else:
+        all_flights = get_flights()
+        return render_template('home_page.html', flights=all_flights)
 
 
 @app.route('/search', methods=['POST'])
@@ -153,26 +154,21 @@ def signup():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # 1. Just showing the form
     if request.method == 'GET':
         return render_template('login.html')
 
-    # 2. Processing the Login
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
 
-        # Call our helper function
         user_name = check_login(email, password)
 
         if user_name:
-            # SUCCESS: Create the "Session" (The digital wristband)
             session['user_email'] = email
             session['user_name'] = user_name
 
             return redirect(url_for('home'))
         else:
-            # FAILURE
             flash("Invalid email or password. Please try again.")
             return redirect(url_for('login'))
 
@@ -198,12 +194,76 @@ def manager_login():
             flash("Invalid Manager ID or Password")
             return redirect(url_for('manager_login'))
 
-#@app.route('/manager-dashboard', methods = ['GET', 'POST'])
-#def dashboard():
- #   if request.method == 'GET':
-#      return render_template('manager_dashboard.html')
 
+@app.route('/manager-dashboard', methods=['GET', 'POST'])
+def manager_dashboard():
+    if not session.get('is_manager'):
+        flash("Access Denied. Managers only.")
+        return redirect(url_for('manager_login'))
 
+    if request.method == 'GET':
+        return render_template('manager_dashboard.html')
+
+    return render_template('manager_dashboard.html')
+
+@app.route('/manager-dashboard/add-employee', methods=['GET', 'POST'])
+def add_employee():
+    if request.method =='GET':
+        return render_template('add-employee.html')
+
+    if request.method == 'POST':
+        employee_data = {
+            'id_num' : request.form.get('id_num'),
+            'first_name': request.form.get('first_name'),
+            'last_name': request.form.get('last_name'),
+            'phone': request.form.get('phone'),
+            'city': request.form.get('city'),
+            'street': request.form.get('street'),
+            'house_number': request.form.get('house_number'),
+            'start_date': date.today(),
+            'password': request.form.get('password'),
+            'long_flight_training': request.form.get('long_flight_training')
+
+        }
+
+        role = request.form.get('role')
+
+        new_employee = EmployeeFactory.create_employee(role, employee_data)
+
+        success, message = add_to_sql(new_employee)
+
+        if success:
+            flash(f"Success! Added {role} named {employee_data['first_name']} ")
+            return redirect(url_for('add_employee'))
+
+        else:
+            flash(f"Error: {message}")
+            return redirect(url_for('add_employee'))
+
+@app.route('/manager-dashboard/add-plane', methods=['GET','POST'])
+def add_plane():
+    if request.method == 'GET':
+        return render_template('add-plane.html')
+
+    if request.method == 'POST':
+        counter = 1
+        new_plane = Plane(
+            plane_id = counter,
+            manufacturer = request.form.get('manufacturer'),
+            purchase_date = request.form.get('purchase_date'),
+            size = request.form.get('size')
+        )
+
+    success, message = add_to_sql(new_plane)
+
+    if success:
+        flash(f"Success! Added a new plane: manufacturer: {request.form.get('manufacturer')} serial number: {counter}")
+        flash(message)
+        counter += 1
+        return redirect(url_for('add_plane'))
+    else:
+        flash(f"Error: {message}")
+        return redirect(url_for('add_plane'))
 
 
 
@@ -222,3 +282,4 @@ def error(e):
 
 if __name__ == '__main__':
     app.run(debug=True)
+

@@ -133,3 +133,37 @@ class Ticket:
         self.guest_email = guest_email
         self.registered_email = registered_email
         self.price = price
+
+class EmployeeFactory:
+    """ a factory class that helps us create a new employee
+    (manager, pilot, attendant) it gets a role and a dictionary with
+    all the relevant attributes"""
+    @staticmethod
+    def create_employee(role, data):
+        args = [
+            data.get('id_num'),
+            data.get('first_name'),
+            data.get('last_name'),
+            data.get('phone'),
+            data.get('city'),
+            data.get('street'),
+            data.get('house_number'),
+            data.get('start_date')
+        ]
+
+        training = data.get('long_training_flight')
+        training_val = 1 if training =='Yes' else 0
+
+        if role == 'Manager':
+            return Manager(*args, password=data.get('password'))
+
+        elif role == 'Pilot':
+            return Pilot(*args, long_flight_training=training_val)
+
+        elif role == 'Attendant':
+            return Attendant(*args, long_flight_training=training_val)
+
+        else:
+            return None
+
+

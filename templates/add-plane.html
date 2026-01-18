@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fly-Tau - Add Employee</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('manager_dashboard') }}" style="text-decoration: none;">
+                <h2 style="color:white; font-weight:800;">Fly-Tau<span style="font-weight:300; font-size: 0.8em; opacity: 0.8;">| Management</span></h2>
+            </a>
+        </div>
+        <div class="nav-links">
+            <span style="color: #00a8e8; margin-right: 20px; font-weight: bold;">
+                <i class="fas fa-user-tie"></i> {{ session['user_name'] }}
+            </span>
+            <a href="{{ url_for('logout') }}" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="auth-wrapper bg-add-plane">
+
+        <div class="registration-container" style="max-width: 600px; width: 100%;">
+
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div style="background-color: #e3f2fd; border-left: 5px solid #2196F3; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                    {% for message in messages %}
+                    <p style="margin: 0; color: #333;">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
+
+            <h2 style="color: #02122c; text-align: center; margin-bottom: 25px;">
+                <i class="fas fa-user-plus"></i> Add A New Plane
+            </h2>
+
+            <form action="{{ url_for('add_plane') }}" method="POST">
+
+               <div class="form-group">
+                    <label>Plane Manufacturer:</label>
+                    <select name="manufacturer" id="manufacturer-selector" required style="width: 100%; padding: 10px; margin-bottom: 15px;">
+                        <option value="" disabled selected>Select Role...</option>
+                        <option value="Airbus">Airbus</option>       <option value="Boeing">Boeing</option>
+                        <option value="dassault">dassault</option>   </select>
+                </div>
+
+                <label>Purchase Date:</label>
+                <input type="date" name="purchase_date" placeholder="Purchase Date" required style="display:block; width: 95%; padding: 10px; margin-bottom: 10px;">
+
+                <label>Plane Size:</label>
+                <select name="size" id="size-selector" required style="width: 100%; padding: 10px; margin-bottom: 15px;">
+                    <option value="" disabled selected>Select Plane Size...</option>
+                    <option value="Big">Big</option>
+                    <option value="Small">Small</option>
+                </select>
+
+                <button type="submit" class="submit-btn" style="margin-top: 25px;">
+                    Register Employee
+                </button>
+
+            </form>
+        </div>
+    </div>
+
+
+</body>
+</html>
