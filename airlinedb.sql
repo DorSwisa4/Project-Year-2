@@ -257,11 +257,11 @@ INSERT INTO Classes (plane_id, class_type, num_columns, num_rows, total_seats) V
 INSERT INTO Seats (plane_id, class_type, row_num, col_num, price_supplement) VALUES
 (1, 'Business', 1, 'A', 100), (1, 'Business', 1, 'B', 100),
 (1, 'Economy', 10, 'A', 0),   (1, 'Economy', 10, 'B', 0),
-(2, 'Business', 1, 'A', 80),
+(2, 'Business', 1, 'A', 100),
 (2, 'Economy', 5, 'A', 0), (2, 'Economy', 5, 'B', 0),
-(3, 'Business', 1, 'A', 120),
+(3, 'Business', 1, 'A', 100),
 (3, 'Economy', 20, 'A', 0),
-(4, 'Economy', 1, 'A', 20), (4, 'Economy', 1, 'B', 20),
+(4, 'Economy', 1, 'A', 0), (4, 'Economy', 1, 'B', 0),
 (5, 'Economy', 1, 'A', 0),
 (6, 'Economy', 1, 'A', 0);
 
