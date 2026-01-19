@@ -239,12 +239,13 @@ INSERT INTO Pilots (id_num, first_name, last_name, phone, city, street, house_nu
 -- 2. מטוסים
 -- ==========================================
 INSERT INTO Planes (manufacturer, purchase_date, size) VALUES
-('Boeing', '2015-01-01', 'Big'),    -- Plane 1
-('Boeing', '2018-06-15', 'Small'),  -- Plane 2
-('Airbus', '2019-01-01', 'Big'),    -- Plane 3
-('Airbus', '2020-02-20', 'Small'),  -- Plane 4
-('Embraer', '2021-03-10', 'Small'), -- Plane 5
-('Bombardier', '2022-04-05', 'Small'); -- Plane 6
+('Boeing', '2015-01-01', 'Big'),    -- Plane 1 (נשאר זהה)
+('Boeing', '2018-06-15', 'Small'),  -- Plane 2 (נשאר זהה)
+('Airbus', '2019-01-01', 'Big'),    -- Plane 3 (נשאר זהה)
+('Airbus', '2020-02-20', 'Small'),  -- Plane 4 (נשאר זהה)
+('Dassault', '2021-03-10', 'Small'), -- Plane 5 (הוחלף מ-Embraer ל-Dassault)
+('Dassault', '2022-04-05', 'Small'); -- Plane 6 (הוחלף מ-Bombardier ל-Dassault)
+
 
 INSERT INTO Classes (plane_id, class_type, num_columns, num_rows, total_seats) VALUES
 (1, 'Business', 4, 5, 20), (1, 'Economy', 9, 30, 270),
