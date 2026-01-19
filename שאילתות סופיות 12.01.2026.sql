@@ -40,8 +40,8 @@ FROM tickets
 JOIN planes ON tickets.plane_id = planes.plane_id
 JOIN orders ON tickets.order_code = orders.order_code
 JOIN flights ON tickets.flight_id = flights.flight_id
-GROUP BY planes.manufacturer, planes.size, tickets.class_type
-ORDER BY planes.manufacturer ASC, planes.size ASC, tickets.class_type ASC;
+GROUP BY planes.manufacturer, planes.size
+ORDER BY planes.manufacturer ASC, planes.size ASC;
 
 
 SELECT attendants.id_num, attendants.first_name, attendants.last_name, 'Attendant' AS Job_Title,
