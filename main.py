@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import date
-from classes import RegisteredCustomer, EmployeeFactory, Plane
+from classes import RegisteredCustomer, EmployeeFactory, Plane, Location
 from utils import add_to_sql, check_login, is_signup_valid, get_flights, get_unique_locations, check_manager_login, get_flight_details, get_user_details, is_manager_phone
 
 app = Flask(__name__)
@@ -233,6 +233,7 @@ def add_employee():
         success, message = add_to_sql(new_employee)
 
         if success:
+            Location.add_new_employee(new_employee)
             flash(f"Success! Added {role} named {employee_data['first_name']} ")
             return redirect(url_for('add_employee'))
 

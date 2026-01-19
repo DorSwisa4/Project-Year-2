@@ -1,4 +1,5 @@
-CREATE DATABASE IF NOT EXISTS AirlineDB;
+DROP DATABASE IF EXISTS AirlineDB;
+CREATE DATABASE AirlineDB;
 USE AirlineDB;
 
 -- ==========================================
@@ -8,7 +9,7 @@ CREATE TABLE Managers (
     id_num VARCHAR(9) PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
-    phone VARCHAR(20),
+    phone VARCHAR(20) NOT NULL,
     city VARCHAR(50),
     street VARCHAR(50),
     house_number VARCHAR(10),
@@ -20,7 +21,7 @@ CREATE TABLE Attendants (
     id_num VARCHAR(9) PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
-    phone VARCHAR(20),
+    phone VARCHAR(20) NOT NULL,
     city VARCHAR(50),
     street VARCHAR(50),
     house_number VARCHAR(10),
@@ -32,7 +33,7 @@ CREATE TABLE Pilots (
     id_num VARCHAR(9) PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
-    phone VARCHAR(20),
+    phone VARCHAR(20) NOT NULL,
     city VARCHAR(50),
     street VARCHAR(50),
     house_number VARCHAR(10),
@@ -44,14 +45,14 @@ CREATE TABLE Pilots (
 -- 2. מטוסים (Planes)
 -- ==========================================
 CREATE TABLE Planes (
-    plane_id VARCHAR(20) PRIMARY KEY,
+    plane_id INT AUTO_INCREMENT PRIMARY KEY,
     manufacturer VARCHAR(50),
     purchase_date DATE,
     size ENUM('Big', 'Small') NOT NULL 
 );
 
-CREATE TABLE FlightClass (
-    plane_id VARCHAR(20),
+CREATE TABLE Classes (
+    plane_id INT,
     class_type ENUM('Business', 'Economy'),
     num_columns INT,
     num_rows INT,
@@ -61,12 +62,13 @@ CREATE TABLE FlightClass (
 );
 
 CREATE TABLE Seats (
-    plane_id VARCHAR(20),
+    plane_id INT,
     class_type ENUM('Business', 'Economy'),
     row_num INT,
     col_num VARCHAR(5),
+    price_supplement DECIMAL(10,2) DEFAULT 0,
     PRIMARY KEY (plane_id, class_type, row_num, col_num),
-    FOREIGN KEY (plane_id, class_type) REFERENCES FlightClass(plane_id, class_type) ON DELETE CASCADE
+    FOREIGN KEY (plane_id, class_type) REFERENCES Classes(plane_id, class_type) ON DELETE CASCADE
 );
 
 -- ==========================================
@@ -80,18 +82,14 @@ CREATE TABLE OperatingLines (
 );
 
 CREATE TABLE Flights (
-    flight_id VARCHAR(20) PRIMARY KEY,
-    plane_id VARCHAR(20),
+    flight_id INT AUTO_INCREMENT PRIMARY KEY,
+    plane_id INT,
     src_country VARCHAR(50), src_city VARCHAR(50), src_airport VARCHAR(50),
     dst_country VARCHAR(50), dst_city VARCHAR(50), dst_airport VARCHAR(50),
     departure_time DATETIME,
     landing_time DATETIME,
+    base_price DECIMAL(10,2) DEFAULT 0,
     
-    -- >>> דרישה 1: סטאטוס טיסה <<<
-    -- Active = פעילה
-    -- Full = תפוסה מלאה
-    -- Landed = התקיימה (נחתה)
-    -- Cancelled = בוטלה
     status ENUM('Active', 'Full', 'Landed', 'Cancelled') DEFAULT 'Active',
     
     FOREIGN KEY (plane_id) REFERENCES Planes(plane_id),
@@ -100,14 +98,14 @@ CREATE TABLE Flights (
 );
 
 CREATE TABLE AttendantsOnFlights (
-    attendant_id VARCHAR(9), flight_id VARCHAR(20),
+    attendant_id VARCHAR(9), flight_id INT,
     PRIMARY KEY (attendant_id, flight_id),
     FOREIGN KEY (attendant_id) REFERENCES Attendants(id_num),
     FOREIGN KEY (flight_id) REFERENCES Flights(flight_id)
 );
 
 CREATE TABLE PilotsOnFlights (
-    pilot_id VARCHAR(9), flight_id VARCHAR(20),
+    pilot_id VARCHAR(9), flight_id INT,
     PRIMARY KEY (pilot_id, flight_id),
     FOREIGN KEY (pilot_id) REFERENCES Pilots(id_num),
     FOREIGN KEY (flight_id) REFERENCES Flights(flight_id)
@@ -159,7 +157,7 @@ CREATE TABLE RegisteredPhones (
 -- 5. הזמנות (Orders) - עם הסטטוס החדש
 -- ==========================================
 CREATE TABLE Orders (
-    order_code VARCHAR(20), 
+    order_code INT AUTO_INCREMENT, 
     
     guest_email VARCHAR(100) NULL,
     registered_email VARCHAR(100) NULL,
@@ -182,15 +180,15 @@ CREATE TABLE Orders (
 -- 6. כרטיסים (Tickets)
 -- ==========================================
 CREATE TABLE Tickets (
-    ticket_number VARCHAR(20) PRIMARY KEY,
+    ticket_number INT AUTO_INCREMENT PRIMARY KEY,
     
-    flight_id VARCHAR(20),
-    plane_id VARCHAR(20),
+    flight_id INT,
+    plane_id INT,
     class_type ENUM('Business', 'Economy'),
     row_num INT,
     col_num VARCHAR(5),
     
-    order_code VARCHAR(20),
+    order_code INT,
     
     -- המיילים המפוצלים (לצורך תיעוד בכרטיס)
     guest_email VARCHAR(100) NULL,
