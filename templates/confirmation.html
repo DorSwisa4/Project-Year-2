@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Confirmed - Fly-Tau</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="confirmation-body">
+
+    <div class="receipt-container">
+        <div class="icon-success">✔</div>
+        <h1>Booking Confirmed!</h1>
+        <p class="order-id">Order ID: #{{ order_id }}</p>
+
+        <div class="divider"></div>
+
+        <div class="details-section">
+            <h3>Flight Details</h3>
+            <div class="flight-route">
+                {{ flight.src_city }} ({{ flight.src_airport }})
+                ➝
+                {{ flight.dst_city }} ({{ flight.dst_airport }})
+            </div>
+            <div class="info-row" style="margin-top: 10px;">
+                <span>Flight Number:</span>
+                <strong>{{ flight.flight_id }}</strong>
+            </div>
+            <div class="info-row">
+                <span>Date:</span>
+                <strong>{{ flight.departure_time }}</strong>
+            </div>
+            <div class="info-row">
+                <span>Airline:</span>
+                <strong>Fly-Tau</strong>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="details-section">
+            <h3>Selected Seats</h3>
+            <div class="seats-list">
+                {% for seat in booking.selected_seats %}
+                    {{ seat }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </div>
+            <div class="info-row" style="margin-top: 10px;">
+                <span>Passenger:</span>
+                <span>{{ booking.first_name }} {{ booking.last_name }}</span>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="details-section">
+            <h3>Payment Summary</h3>
+            <div class="info-row">
+                <span>Total Amount Paid:</span>
+                <span class="total-price">${{ price }}</span>
+            </div>
+        </div>
+
+        <div class="policy-box">
+            <strong>Cancellation Policy:</strong><br>
+            You can cancel this booking for a 95% refund up to 36 hours before the flight departure time.
+        </div>
+
+        <a href="{{ url_for('home') }}" class="btn-home">Back to Home Page</a>
+    </div>
+
+</body>
+</html>

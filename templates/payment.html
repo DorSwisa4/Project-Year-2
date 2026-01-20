@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment & Summary</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="payment-body">
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('home') }}" style="text-decoration: none;">
+                <h2 style="color:white; font-weight:800;">Fly-Tau</h2>
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}">Home</a>
+                {% if session.get('user_name') %}
+                    <span style="color: #00a8e8; margin-left: 20px; font-weight: bold;">{{ session['user_name'] }}</span>
+                    <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="payment-container">
+
+        <div class="summary-section">
+            <h2 class="section-title"><i class="fas fa-list-alt"></i> Order Summary</h2>
+
+            <div class="summary-grid">
+                <div class="summary-box">
+                    <h3>Customer Details</h3>
+                    <p><strong>Name:</strong> {{ booking.first_name }} {{ booking.last_name }}</p>
+                    <p><strong>Email:</strong> {{ booking.email }}</p>
+                    <p><strong>Phones:</strong> {{ booking.phones | join(', ') }}</p>
+                </div>
+
+                <div class="summary-box">
+                    <h3>Flight Details</h3>
+                    <p><strong>Flight ID:</strong> #{{ flight.flight_id }}</p>
+                    <p><strong>From:</strong> {{ flight.src_city }} ({{ flight.src_airport }})</p>
+                    <p><strong>To:</strong> {{ flight.dst_city }} ({{ flight.dst_airport }})</p>
+                    <p><strong>Date:</strong> {{ flight.departure_time }}</p>
+                </div>
+
+                <div class="summary-box full-width">
+                    <h3>Seats & Cost</h3>
+                    <p><strong>Selected Seats:</strong> {{ booking.selected_seats | join(', ') }}</p>
+                    <hr>
+                    <div class="price-row">
+                        <span>Economy (x{{ booking.tickets_economy }}):</span>
+                        <span>${{ booking.tickets_economy * flight.price_economy }}</span>
+                    </div>
+                    {% if booking.tickets_business > 0 %}
+                    <div class="price-row">
+                        <span>Business (x{{ booking.tickets_business }}):</span>
+                        <span>${{ booking.tickets_business * flight.price_business }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="total-row">
+                        <span>Total:</span>
+                        <span>${{ price }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="payment-section">
+            <h2 class="section-title"><i class="fas fa-credit-card"></i> Payment</h2>
+
+            <form action="/payment" method="POST">
+                <div class="form-group">
+                    <label>Card Number</label>
+                    <div class="card-input-wrapper">
+                        <input type="text" class="modern-input" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                        <i class="far fa-credit-card card-icon"></i>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Expiry</label>
+                        <input type="text" class="modern-input" placeholder="MM/YY" maxlength="5" required>
+                    </div>
+                    <div class="form-group">
+                        <label>CVV</label>
+                        <input type="text" class="modern-input" placeholder="123" maxlength="3" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="finish-btn">Confirm Payment (${{ price }})</button>
+            </form>
+
+            <div class="navigation-buttons">
+                <a href="{{ url_for('seat_selection') }}" class="nav-btn secondary">
+                    <i class="fas fa-chair"></i> Back to Seat Selection
+                </a>
+
+                <a href="{{ url_for('order_page', flight_id=flight.flight_id) }}" class="nav-btn danger">
+                    <i class="fas fa-user-edit"></i> Change Booking Details
+                </a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
