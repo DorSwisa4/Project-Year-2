@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fly-Tau - Add Operating Line</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .section-header {
+            color: #00a8e8;
+            border-bottom: 2px solid #eee;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('manager_dashboard') }}" style="text-decoration: none;">
+                <h2 style="color:white; font-weight:800;">Fly-Tau<span style="font-weight:300; font-size: 0.8em; opacity: 0.8;">| Management</span></h2>
+            </a>
+        </div>
+        <div class="nav-links">
+            <span style="color: #00a8e8; font-weight: bold;">
+                <i class="fas fa-user-tie"></i> {{ session['user_name'] }}
+            </span>
+            <a href="{{ url_for('manager_dashboard') }}">More Operations</a>
+            <a href="{{ url_for('logout') }}" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="auth-wrapper bg-add-Line">
+
+        <div class="registration-container" style="max-width: 650px; width: 100%;">
+
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div style="background-color: #e3f2fd; border-left: 5px solid #2196F3; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                    {% for message in messages %}
+                    <p style="margin: 0; color: #333;">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
+
+            <h2 style="color: #02122c; text-align: center; margin-bottom: 10px;">
+                <i class="fas fa-route"></i> Add New Operating Line
+            </h2>
+
+            <form action="{{ url_for('new_operating_line') }}" method="POST">
+
+                <div class="section-header">
+                    <i class="fas fa-plane-departure"></i> Source Details
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Source Country</label>
+                        <input type="text" name="src_country" class="modern-input" placeholder="e.g. Israel" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Source City</label>
+                        <input type="text" name="src_city" class="modern-input" placeholder="e.g. Tel Aviv" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Source Airport Code</label>
+                    <input type="text" name="src_airport" class="modern-input" placeholder="e.g. TLV" required>
+                </div>
+
+                <div class="section-header">
+                    <i class="fas fa-plane-arrival"></i> Destination Details
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Dest. Country</label>
+                        <input type="text" name="dst_country" class="modern-input" placeholder="e.g. USA" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Dest. City</label>
+                        <input type="text" name="dst_city" class="modern-input" placeholder="e.g. New York" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Dest. Airport Code</label>
+                    <input type="text" name="dst_airport" class="modern-input" placeholder="e.g. JFK" required>
+                </div>
+
+                <div class="section-header">
+                    <i class="fas fa-stopwatch"></i> Flight Duration
+                </div>
+
+                <div class="form-group">
+                    <label>Duration</label>
+                    <input type="time" name="flight_duration" class="modern-input" placeholder="e.g. 720" min="1" required>
+                </div>
+
+                <button type="submit" class="submit-btn" style="margin-top: 25px;">
+                    Create Operating Line
+                </button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
