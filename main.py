@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import date
-from classes import RegisteredCustomer, EmployeeFactory, Plane, Location, OperatingLine, Order, Ticket
-from utils import add_to_sql, check_login, is_signup_valid, get_flights, get_unique_locations, check_manager_login, get_flight_details, get_user_details, is_manager_phone, create_classes_and_seats, get_plane_layout, get_occupied_seats, is_email_registered, ensure_guest_exists, check_and_update_flight_status, db_config
+from classes import *
+from utils import *
 import mysql.connector
 
 
@@ -122,6 +122,9 @@ def order_page(flight_id):
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    if session.get('is_manager'):
+        return redirect(url_for('manager_dashboard'))
+
     if request.method == 'GET':
         return render_template('sign-up.html')
 
@@ -208,10 +211,13 @@ def manager_dashboard():
         flash("Access Denied. Managers only.")
         return redirect(url_for('manager_login'))
 
-    if request.method == 'GET':
-        return render_template('manager_dashboard.html')
+    flights_data = get_manager_flight_history()
 
-    return render_template('manager_dashboard.html')
+    if request.method == 'GET':
+        return render_template('manager_dashboard.html', flights=flights_data)
+
+    return render_template('manager_dashboard.html', flights=flights_data)
+
 
 @app.route('/manager-dashboard/add-employee', methods=['GET', 'POST'])
 def add_employee():
@@ -244,7 +250,6 @@ def add_employee():
         success, message = add_to_sql(new_employee)
 
         if success:
-            Location.add_new_employee(new_employee)
             flash(f"Success! Added {role} named {employee_data['first_name']} ")
             return redirect(url_for('add_employee'))
 
@@ -279,7 +284,7 @@ def add_plane():
 
         create_classes_and_seats(new_plane.plane_id, new_plane.size, request.form)
 
-        flash(f"Success! Plane {new_plane.plane_id} by {Plane.manufacturer} has been added to the company's fleet.")
+        flash(f"Success! Plane {new_plane.plane_id} by {new_plane.manufacturer} has been added to the company's fleet.")
         return redirect(url_for('add_plane'))
 
 @app.route('/manager-dashboard/add-operating-line', methods=['GET', 'POST'])
@@ -311,6 +316,173 @@ def new_operating_line():
         else:
             flash(f"Success! A new line from {new_line.src_country}, {new_line.src_city} to {new_line.dst_country}, {new_line.dst_city} has been created!")
             return redirect(url_for('new_operating_line'))
+
+
+# Add this to main.py
+
+@app.route('/api/schedule-data', methods=['POST'])
+def api_schedule_data():
+    try:
+        request_data = request.json
+        action = request_data.get('action')
+
+        # 1. Fetch Operating Lines (Routes) for the Dropdowns
+        if action == 'get_lines':
+            conn = mysql.connector.connect(**db_config)
+            cursor = conn.cursor(dictionary=True)
+
+            cursor.execute("SELECT * FROM OperatingLines")
+            lines = cursor.fetchall()
+
+            # Convert 'flight_duration' (TimeDelta) to string so JSON can read it
+            for line in lines:
+                if 'flight_duration' in line and line['flight_duration'] is not None:
+                    line['flight_duration'] = str(line['flight_duration'])
+
+            cursor.close()
+            conn.close()
+            return jsonify(lines)
+
+        # 2. Fetch Available Resources (Planes/Crew) based on History
+        elif action == 'get_resources':
+            src_country = request_data.get('src_country')
+            dept_date = request_data.get('dept_date')
+            dept_time = request_data.get('dept_time')
+
+            if not dept_date or not dept_time:
+                return jsonify({'error': 'Date and Time are required'}), 400
+
+            full_date_str = f"{dept_date} {dept_time}:00"
+
+            # Call the function from utils.py
+            resources = get_available_resources_for_flight(src_country, full_date_str)
+
+            return jsonify(resources)
+
+    except Exception as e:
+        print(f"API ERROR: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/manager-dashboard/schedule-flight', methods=['GET', 'POST'])
+def schedule_flight():
+    if not session.get('is_manager'):
+        flash("Access Denied.")
+        return redirect(url_for('manager_login'))
+
+    if request.method == 'GET':
+        return render_template('schedule-flight.html')
+
+    if request.method == 'POST':
+        # 1. Extract Basic Flight Details
+        src_country = request.form.get('src_country')
+        src_city = request.form.get('src_city')
+        src_airport = request.form.get('src_airport')
+        dst_country = request.form.get('dst_country')
+        dst_city = request.form.get('dst_city')
+        dst_airport = request.form.get('dst_airport')
+        base_price = request.form.get('base_price')
+
+        # 2. Date & Time
+        dept_date = request.form.get('dept_date')
+        dept_time = request.form.get('dept_time')
+        landing_datetime = request.form.get('landing_datetime')  # Calculated by JS
+
+        # Create the full datetime string for the DB
+        departure_dt = f"{dept_date} {dept_time}"
+
+        # 3. Resources (IDs)
+        plane_id = request.form.get('selected_plane')
+        pilot_ids = request.form.getlist('selected_pilots')
+        attendant_ids = request.form.getlist('selected_attendants')
+
+        # 4. Create Flight Object
+        new_flight = Flight(
+            plane_id=plane_id,
+            src_country=src_country, src_city=src_city, src_airport=src_airport,
+            dst_country=dst_country, dst_city=dst_city, dst_airport=dst_airport,
+            departure_time=departure_dt,
+            landing_time=landing_datetime,
+            status='Active'
+        )
+        # Manually attach base_price (assuming your DB insert logic handles it)
+        new_flight.base_price = base_price
+
+        # 5. Insert Flight into DB
+        success, msg = add_to_sql(new_flight)
+
+        if success:
+            # 6. Assign Crew to the new Flight ID
+            assign_success = assign_crew_to_flight(new_flight.flight_id, pilot_ids, attendant_ids)
+
+            if assign_success:
+                # --- LOGIC UPDATE: No manual location update needed ---
+                # Since we now query the flight history to find resources,
+                # simply having this flight in the database is enough
+                # to update the "location" of the crew/plane for future queries.
+
+                flash("Success! Flight scheduled successfully.")
+                return redirect(url_for('manager_dashboard'))
+            else:
+                flash("Flight created, but error assigning crew.")
+                return redirect(url_for('manager_dashboard'))
+        else:
+            flash(f"Database Error: {msg}")
+            return redirect(url_for('schedule_flight'))
+
+@app.route('/manager-dashboard/report/load-factor')
+def report_load_factor():
+    if not session.get('is_manager'):
+        flash("Access Denied. Managers only.")
+        return redirect(url_for('manager_login'))
+
+    data = get_load_factor_stats()
+    return render_template('report_load_factor.html', report_data=data)
+
+@app.route('/manager-dashboard/report/revenue')
+def report_revenue():
+    if not session.get('is_manager'):
+        flash("Access Denied. Managers only.")
+        return redirect(url_for('manager_login'))
+
+    data = get_revenue_stats()
+
+    labels = [row['month'] for row in data]
+    values = [float(row['total_revenue']) for row in data]
+
+    return render_template('report_revenue.html', labels=labels, values=values)
+
+@app.route('/manager-dashboard/report/popular-routes')
+def report_popular_routes():
+    if not session.get('is_manager'):
+        flash("Access Denied. Managers only.")
+        return redirect(url_for('manager_login'))
+
+    data = get_popular_routes_stats()
+    labels = [row['dst_city'] for row in data]
+    values = [row['ticket_count'] for row in data]
+
+    return render_template('report_routes.html', labels=labels, values=values)
+
+
+@app.route('/manager-dashboard/report/cancellations')
+def report_cancellations():
+    if not session.get('is_manager'):
+        flash("Access Denied. Managers only.")
+        return redirect(url_for('manager_login'))
+
+    data = get_order_status_stats()
+
+    # Prepare data for Chart.js
+    labels = ['Active', 'Completed', 'Cancelled (Customer)', 'Cancelled (System)']
+    values = [
+        data['Active'],
+        data['Completed'],
+        data['CancelledByCustomer'],
+        data['CancelledBySystem']
+    ]
+
+    return render_template('report_health.html', labels=labels, values=values)
 
 
 

@@ -1,5 +1,6 @@
 import mysql.connector
 from classes import *
+from datetime import date
 
 # DB Configuration
 db_config = {
@@ -129,6 +130,9 @@ def add_to_sql(obj):
                 values = (obj.flight_id, obj.plane_id, obj.src_country, obj.src_city, obj.src_airport, obj.dst_country,
                           obj.dst_city, obj.dst_airport, obj.departure_time, obj.landing_time, obj.status)
 
+                cursor.execute(sql, values)
+
+                obj.flight_id = cursor.lastrowid
 
             elif isinstance(obj, Order):
                 sql = """INSERT INTO Orders (total_cost, status, guest_email, registered_email)
@@ -481,7 +485,44 @@ def is_manager_phone(phone_number):
     return exists
 
 
-# In utils.py
+def get_manager_flight_history():
+    """
+    Fetches all flights with status, seat occupancy, and total capacity.
+    """
+    conn = None
+    cursor = None
+    results = []
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT 
+                f.flight_id, 
+                f.src_city, f.src_airport, 
+                f.dst_city, f.dst_airport, 
+                f.departure_time, 
+                f.status,
+
+                -- Calculate Total Seats (Capacity)
+                (SELECT IFNULL(SUM(total_seats), 0) FROM Classes c WHERE c.plane_id = f.plane_id) as total_seats,
+
+                -- Calculate Occupied Seats (Tickets Sold)
+                (SELECT COUNT(*) FROM Tickets t WHERE t.flight_id = f.flight_id) as occupied_seats
+
+            FROM Flights f
+            ORDER BY f.departure_time DESC
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+
+    except mysql.connector.Error as err:
+        print(f"Error fetching manager flights: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+    return results
 
 def create_classes_and_seats(plane_id, plane_size, form_data):
     """

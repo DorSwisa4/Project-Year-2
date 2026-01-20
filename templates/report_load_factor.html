@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Load Factor Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { overflow: hidden; }
+        .report-wrapper { display: flex; height: 75vh; gap: 40px; align-items: flex-start; }
+        .text-panel { flex: 1; padding: 20px; font-size: 1.2rem; }
+
+        .table-panel {
+            flex: 2;
+            height: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            overflow: hidden; /* Contains the scroll */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .scroll-container {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { position: sticky; top: 0; background: #f0f8ff; z-index: 2; padding: 15px; font-size: 1.1rem; }
+        td { padding: 15px; font-size: 1.1rem; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <a href="{{ url_for('manager_dashboard') }}" class="back-to-top-btn" style="font-size: 1.1rem;">&larr; Back to Dashboard</a>
+
+        <h2 class="section-title" style="font-size: 2rem; margin-bottom: 20px;">Flight Load Factor Report</h2>
+
+        <div class="report-wrapper">
+            <div class="text-panel">
+                <div style="background-color: white; padding: 30px; border-radius: 12px; border-left: 6px solid #00a8e8; box-shadow: 0 5px 20px rgba(0,0,0,0.05);">
+                    <h3 style="color: #00a8e8; margin-bottom: 15px; font-size: 1.5rem;">Occupancy Analysis</h3>
+                    <p style="color: #444; line-height: 1.6;">
+                        This table displays the occupancy rate for every active flight.
+                        <br><br>
+                        <strong>Blue Bar:</strong> Healthy occupancy (>50%).
+                        <br>
+                        <strong>Red Bar:</strong> Low occupancy (needs promotion).
+                        <br><br>
+                        Formula: <em>(Tickets Sold / Total Seats) * 100</em>
+                    </p>
+                </div>
+            </div>
+
+            <div class="table-panel">
+                <div class="scroll-container">
+                    <table>
+                        <thead>
+                            <tr style="text-align: left;">
+                                <th>Flight #</th>
+                                <th>Route</th>
+                                <th>Date</th>
+                                <th>Capacity</th>
+                                <th>Occupancy %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in report_data %}
+                            <tr>
+                                <td>{{ row.flight_id }}</td>
+                                <td>{{ row.src_city }} &rarr; {{ row.dst_city }}</td>
+                                <td>{{ row.dept_time }}</td>
+                                <td>{{ row.tickets_sold }} / {{ row.capacity }}</td>
+                                <td>
+                                    <div style="background: #e0e0e0; width: 100px; height: 12px; border-radius: 6px; display: inline-block;">
+                                        <div style="background: {% if row.occupancy < 50 %}#ff4d4d{% else %}#00a8e8{% endif %};
+                                                    width: {{ row.occupancy }}%; height: 100%; border-radius: 6px;"></div>
+                                    </div>
+                                    <span style="font-weight: bold; margin-left: 8px;">{{ row.occupancy }}%</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
