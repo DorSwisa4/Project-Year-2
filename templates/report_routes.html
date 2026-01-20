@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Popular Routes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { overflow: hidden; }
+        .report-wrapper { display: flex; height: 75vh; gap: 40px; align-items: center; }
+        .text-panel { flex: 1; padding: 20px; font-size: 1.2rem; }
+        .chart-panel { flex: 2; height: 100%; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <a href="{{ url_for('manager_dashboard') }}" class="back-to-top-btn" style="font-size: 1.1rem;">&larr; Back to Dashboard</a>
+
+        <h2 class="section-title" style="font-size: 2rem; margin-bottom: 20px;">Top Destinations (Tickets Sold)</h2>
+
+        <div class="report-wrapper">
+            <div class="text-panel">
+                <div style="background-color: white; padding: 30px; border-radius: 12px; border-left: 6px solid #00a8e8; box-shadow: 0 5px 20px rgba(0,0,0,0.05);">
+                    <h3 style="color: #00a8e8; margin-bottom: 15px; font-size: 1.5rem;">Route Analysis</h3>
+                    <p style="color: #444; line-height: 1.6;">
+                        This ranking shows the most popular destinations based on total ticket volume.
+                        <br><br>
+                        <strong>Y-Axis:</strong> Number of tickets sold.
+                        <br>
+                        <strong>X-Axis:</strong> Destination Cities.
+                        <br><br>
+                        High-performing routes should be prioritized for scheduling and marketing.
+                    </p>
+                </div>
+            </div>
+
+            <div class="chart-panel">
+                <canvas id="routeChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('routeChart').getContext('2d');
+        Chart.defaults.font.size = 16;
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ labels | tojson }},
+                datasets: [{
+                    label: 'Tickets Sold',
+                    data: {{ values | tojson }},
+                    backgroundColor: ['#00a8e8', '#0077b6', '#023e8a', '#0096c7', '#48cae4'],
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { font: { size: 18, weight: 'bold' } } }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

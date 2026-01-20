@@ -1,5 +1,6 @@
 import mysql.connector
 from classes import *
+from datetime import date
 
 # DB Configuration
 db_config = {
@@ -128,6 +129,10 @@ def add_to_sql(obj):
                          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
                 values = (obj.flight_id, obj.plane_id, obj.src_country, obj.src_city, obj.src_airport, obj.dst_country,
                           obj.dst_city, obj.dst_airport, obj.departure_time, obj.landing_time, obj.status)
+
+                cursor.execute(sql, values)
+
+                obj.flight_id = cursor.lastrowid
 
             elif isinstance(obj, Order):
                 sql = """INSERT INTO Orders (order_code, total_cost, status, guest_email, registered_email)
@@ -459,7 +464,44 @@ def is_manager_phone(phone_number):
     return exists
 
 
-# In utils.py
+def get_manager_flight_history():
+    """
+    Fetches all flights with status, seat occupancy, and total capacity.
+    """
+    conn = None
+    cursor = None
+    results = []
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT 
+                f.flight_id, 
+                f.src_city, f.src_airport, 
+                f.dst_city, f.dst_airport, 
+                f.departure_time, 
+                f.status,
+
+                -- Calculate Total Seats (Capacity)
+                (SELECT IFNULL(SUM(total_seats), 0) FROM Classes c WHERE c.plane_id = f.plane_id) as total_seats,
+
+                -- Calculate Occupied Seats (Tickets Sold)
+                (SELECT COUNT(*) FROM Tickets t WHERE t.flight_id = f.flight_id) as occupied_seats
+
+            FROM Flights f
+            ORDER BY f.departure_time DESC
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+
+    except mysql.connector.Error as err:
+        print(f"Error fetching manager flights: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+    return results
 
 def create_classes_and_seats(plane_id, plane_size, form_data):
     """
@@ -525,3 +567,282 @@ def create_classes_and_seats(plane_id, plane_size, form_data):
                 add_to_sql(new_seat)
 
     return True
+
+
+# --- REPORT 1: LOAD FACTOR ---
+def get_load_factor_stats():
+    """
+    Returns a list of flights with their capacity, tickets sold, and occupancy %.
+    """
+    conn = None
+    cursor = None
+    results = []
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        # This query calculates capacity (from Classes) and sold tickets (from Tickets)
+        query = """
+            SELECT 
+                f.flight_id, 
+                f.src_city, 
+                f.dst_city, 
+                DATE_FORMAT(f.departure_time, '%Y-%m-%d %H:%i') as dept_time,
+                p.manufacturer,
+
+                -- Subquery for Total Capacity
+                (SELECT IFNULL(SUM(total_seats), 0) FROM Classes c WHERE c.plane_id = f.plane_id) as capacity,
+
+                -- Subquery for Tickets Sold
+                (SELECT COUNT(*) FROM Tickets t WHERE t.flight_id = f.flight_id) as tickets_sold
+
+            FROM Flights f
+            JOIN Planes p ON f.plane_id = p.plane_id
+            WHERE f.status != 'Cancelled'
+            ORDER BY f.departure_time DESC
+        """
+        cursor.execute(query)
+        data = cursor.fetchall()
+
+        # Calculate Percentage in Python to be safe
+        for row in data:
+            cap = row['capacity']
+            sold = row['tickets_sold']
+            percentage = round((sold / cap * 100), 1) if cap > 0 else 0
+
+            row['occupancy'] = percentage
+            results.append(row)
+
+    except mysql.connector.Error as err:
+        print(f"Report Error: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+    return results
+
+
+# --- REPORT 2: REVENUE ---
+def get_revenue_stats():
+    """ Returns total revenue grouped by Month. """
+    conn = None
+    cursor = None
+    results = []
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        # Group by Year-Month
+        query = """
+            SELECT 
+                DATE_FORMAT(f.departure_time, '%Y-%m') as month,
+                SUM(t.price) as total_revenue
+            FROM Tickets t
+            JOIN Flights f ON t.flight_id = f.flight_id
+            GROUP BY month
+            ORDER BY month ASC
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+
+    except mysql.connector.Error as err:
+        print(f"Report Error: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+    return results
+
+
+# --- REPORT 3: POPULAR ROUTES ---
+def get_popular_routes_stats():
+    """ Returns top destinations by ticket sales. """
+    conn = None
+    cursor = None
+    results = []
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT 
+                f.dst_city, 
+                COUNT(t.ticket_number) as ticket_count
+            FROM Tickets t
+            JOIN Flights f ON t.flight_id = f.flight_id
+            GROUP BY f.dst_city
+            ORDER BY ticket_count DESC
+            LIMIT 5
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+    except mysql.connector.Error as err:
+        print(f"Report Error: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+    return results
+
+
+# --- REPORT 4: OPERATIONAL HEALTH (orders) ---
+def get_order_status_stats():
+    """ Returns count of Orders grouped by their status. """
+    conn = None
+    cursor = None
+    results = {
+        'Active': 0,
+        'Completed': 0,
+        'CancelledByCustomer': 0,
+        'CancelledBySystem': 0
+    }
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        query = "SELECT status, COUNT(*) as count FROM Orders GROUP BY status"
+        cursor.execute(query)
+        rows = cursor.fetchall()
+
+        for row in rows:
+            if row['status'] in results:
+                results[row['status']] = row['count']
+
+    except mysql.connector.Error as err:
+        print(f"Report Error: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+    return results
+
+def assign_crew_to_flight(flight_id, pilot_ids, attendant_ids):
+    conn = None
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        # Insert Pilots
+        sql_pilot = "INSERT INTO PilotsOnFlights (pilot_id, flight_id) VALUES (%s, %s)"
+        for p_id in pilot_ids:
+            cursor.execute(sql_pilot, (p_id, flight_id))
+
+        # Insert Attendants
+        sql_att = "INSERT INTO AttendantsOnFlights (attendant_id, flight_id) VALUES (%s, %s)"
+        for a_id in attendant_ids:
+            cursor.execute(sql_att, (a_id, flight_id))
+
+        conn.commit()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Error assigning crew: {err}")
+        return False
+    finally:
+        if conn: conn.close()
+
+
+def get_available_resources_for_flight(src_country, query_date_str):
+    """
+    Finds resources available in src_country at the specific query_date.
+
+    Logic:
+    1. Subqueries find the 'last_dst' (destination of last flight) and 'last_landing' time.
+    2. HAVING clause checks:
+       - (last_dst IS NULL): resource has NEVER flown -> Available anywhere (Global).
+       - OR (last_dst = src_country AND last_landing <= query_date): resource is currently here.
+    """
+    is_long_flight = False
+    conn = None
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        # --- 1. PLANES ---
+        sql_planes = """
+            SELECT 
+                P.plane_id, P.manufacturer, P.size,
+                (
+                    SELECT dst_country 
+                    FROM Flights F 
+                    WHERE F.plane_id = P.plane_id 
+                      AND F.departure_time < %s 
+                    ORDER BY F.departure_time DESC LIMIT 1
+                ) as last_dst,
+                (
+                    SELECT landing_time 
+                    FROM Flights F 
+                    WHERE F.plane_id = P.plane_id 
+                      AND F.departure_time < %s 
+                    ORDER BY F.departure_time DESC LIMIT 1
+                ) as last_landing
+            FROM Planes P
+            HAVING (last_dst IS NULL) 
+                OR (last_dst = %s AND last_landing <= %s)
+        """
+        cursor.execute(sql_planes, (query_date_str, query_date_str, src_country, query_date_str))
+        valid_planes = [(p['plane_id'], p['manufacturer'], p['size']) for p in cursor.fetchall()]
+
+        # --- 2. PILOTS ---
+        sql_pilots = """
+            SELECT 
+                P.id_num, P.first_name, P.last_name, P.long_flight_training,
+                (
+                    SELECT F.dst_country 
+                    FROM Flights F 
+                    JOIN PilotsOnFlights POF ON F.flight_id = POF.flight_id
+                    WHERE POF.pilot_id = P.id_num 
+                      AND F.departure_time < %s 
+                    ORDER BY F.departure_time DESC LIMIT 1
+                ) as last_dst,
+                (
+                    SELECT F.landing_time 
+                    FROM Flights F 
+                    JOIN PilotsOnFlights POF ON F.flight_id = POF.flight_id
+                    WHERE POF.pilot_id = P.id_num 
+                      AND F.departure_time < %s 
+                    ORDER BY F.departure_time DESC LIMIT 1
+                ) as last_landing
+            FROM Pilots P
+            HAVING (last_dst IS NULL) 
+                OR (last_dst = %s AND last_landing <= %s)
+        """
+        cursor.execute(sql_pilots, (query_date_str, query_date_str, src_country, query_date_str))
+        valid_pilots = [(p['id_num'], p['first_name'], p['last_name'], p['long_flight_training']) for p in
+                        cursor.fetchall()]
+
+        # --- 3. ATTENDANTS ---
+        sql_attendants = """
+            SELECT 
+                A.id_num, A.first_name, A.last_name, A.long_flight_training,
+                (
+                    SELECT F.dst_country 
+                    FROM Flights F 
+                    JOIN AttendantsOnFlights AOF ON F.flight_id = AOF.flight_id
+                    WHERE AOF.attendant_id = A.id_num 
+                      AND F.departure_time < %s 
+                    ORDER BY F.departure_time DESC LIMIT 1
+                ) as last_dst,
+                (
+                    SELECT F.landing_time 
+                    FROM Flights F 
+                    JOIN AttendantsOnFlights AOF ON F.flight_id = AOF.flight_id
+                    WHERE AOF.attendant_id = A.id_num 
+                      AND F.departure_time < %s 
+                    ORDER BY F.departure_time DESC LIMIT 1
+                ) as last_landing
+            FROM Attendants A
+            HAVING (last_dst IS NULL) 
+                OR (last_dst = %s AND last_landing <= %s)
+        """
+        cursor.execute(sql_attendants, (query_date_str, query_date_str, src_country, query_date_str))
+        valid_attendants = [(a['id_num'], a['first_name'], a['last_name'], a['long_flight_training']) for a in
+                            cursor.fetchall()]
+
+    except mysql.connector.Error as err:
+        print(f"Error fetching resources: {err}")
+        return {'error': str(err)}
+    finally:
+        if conn: conn.close()
+
+    return {
+        'is_long_flight': is_long_flight,
+        'planes': valid_planes,
+        'pilots': valid_pilots,
+        'attendants': valid_attendants
+    }
