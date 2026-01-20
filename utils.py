@@ -95,9 +95,18 @@ def add_to_sql(obj):
                 sql = """INSERT INTO GuestCustomers (email, first_name_en, last_name_en) VALUES (%s, %s, %s)"""
                 values = (obj.email, obj.first_name_en, obj.last_name_en)
 
+
             elif isinstance(obj, Plane):
-                sql = """INSERT INTO Planes (plane_id, manufacturer, purchase_date, size) VALUES (%s, %s, %s, %s)"""
-                values = (obj.plane_id, obj.manufacturer, obj.purchase_date, obj.size)
+
+                sql = """INSERT INTO Planes (manufacturer, purchase_date, size) VALUES (%s, %s, %s)"""
+
+                values = (obj.manufacturer, obj.purchase_date, obj.size)
+
+                cursor.execute(sql, values)
+
+                new_id = cursor.lastrowid
+
+                obj.plane_id = new_id
 
             elif isinstance(obj, FlightClass):
                 sql = """INSERT INTO Classes (plane_id, class_type, num_columns, num_rows, total_seats) VALUES (%s, %s, %s, %s, %s)"""
@@ -448,3 +457,71 @@ def is_manager_phone(phone_number):
         if conn: conn.close()
 
     return exists
+
+
+# In utils.py
+
+def create_classes_and_seats(plane_id, plane_size, form_data):
+    """
+    Generates FlightClass and Seat objects for a given plane and inserts them into SQL.
+
+    Args:
+        plane_id: The ID of the newly created plane.
+        plane_size: 'Big' or 'Small'.
+        form_data: The request.form dictionary containing row/col counts.
+    """
+
+    # 1. Define what classes to build based on size
+    classes_to_create = []
+
+    # Economy (Always exists)
+    try:
+        eco_rows = int(form_data.get('eco_rows'))
+        eco_cols = int(form_data.get('eco_cols'))
+        classes_to_create.append(('Economy', eco_rows, eco_cols))
+    except (ValueError, TypeError):
+        print("Error reading Economy configuration.")
+        return False
+
+    # Business (Only if Big)
+    if plane_size == 'Big':
+        try:
+            bus_rows = int(form_data.get('bus_rows', 0))
+            bus_cols = int(form_data.get('bus_cols', 0))
+            if bus_rows > 0 and bus_cols > 0:
+                classes_to_create.append(('Business', bus_rows, bus_cols))
+        except (ValueError, TypeError):
+            # Not critical if empty, just skip business
+            pass
+
+    # 2. Loop through config, create objects, and save to SQL
+    col_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    for class_name, rows, cols in classes_to_create:
+        # A. Create & Save FlightClass
+        flight_class = FlightClass(
+            plane_id=plane_id,
+            class_type=class_name,
+            num_rows=rows,
+            num_columns=cols
+        )
+        add_to_sql(flight_class)
+
+        # B. Generate & Save Seats
+        for r in range(1, rows + 1):
+            for c in range(cols):
+                # Safety check for column limits (A-Z)
+                if c >= len(col_letters):
+                    break
+
+                col_char = col_letters[c]
+
+                new_seat = Seat(
+                    plane_id=plane_id,
+                    class_type=class_name,
+                    row_num=r,
+                    col_num=col_char
+                )
+                add_to_sql(new_seat)
+
+    return True

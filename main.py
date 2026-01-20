@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import date
-from classes import RegisteredCustomer, EmployeeFactory, Plane, Location
-from utils import add_to_sql, check_login, is_signup_valid, get_flights, get_unique_locations, check_manager_login, get_flight_details, get_user_details, is_manager_phone
+from classes import RegisteredCustomer, EmployeeFactory, Plane, Location, OperatingLine
+from utils import add_to_sql, check_login, is_signup_valid, get_flights, get_unique_locations, check_manager_login, get_flight_details, get_user_details, is_manager_phone, create_classes_and_seats
 
 app = Flask(__name__)
 
@@ -154,6 +154,10 @@ def signup():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if session.get('is_manager'):
+        session.clear()
+        return redirect(url_for('login'))
+
     if request.method == 'GET':
         return render_template('login.html')
 
@@ -208,6 +212,10 @@ def manager_dashboard():
 
 @app.route('/manager-dashboard/add-employee', methods=['GET', 'POST'])
 def add_employee():
+    if not session.get('is_manager'):
+        flash("Access Denied. Managers only.")
+        return redirect(url_for('manager_login'))
+
     if request.method =='GET':
         return render_template('add-employee.html')
 
@@ -241,30 +249,68 @@ def add_employee():
             flash(f"Error: {message}")
             return redirect(url_for('add_employee'))
 
-@app.route('/manager-dashboard/add-plane', methods=['GET','POST'])
+
+@app.route('/manager-dashboard/add-plane', methods=['GET', 'POST'])
 def add_plane():
+    if not session.get('is_manager'):
+        flash("Access Denied. Managers only.")
+        return redirect(url_for('manager_login'))
+
     if request.method == 'GET':
         return render_template('add-plane.html')
 
     if request.method == 'POST':
-        counter = 1
+        # 1. Create the Plane Object
         new_plane = Plane(
-            plane_id = counter,
-            manufacturer = request.form.get('manufacturer'),
-            purchase_date = request.form.get('purchase_date'),
-            size = request.form.get('size')
+            manufacturer=request.form.get('manufacturer'),
+            purchase_date=request.form.get('purchase_date'),
+            size=request.form.get('size'),
+            plane_id=None
         )
 
-    success, message = add_to_sql(new_plane)
+        success = add_to_sql(new_plane)
 
-    if success:
-        flash(f"Success! Added a new plane: manufacturer: {request.form.get('manufacturer')} serial number: {counter}")
-        flash(message)
-        counter += 1
+        if not success:
+            flash(f"Error adding plane")
+            return redirect(url_for('add_plane'))
+
+        create_classes_and_seats(new_plane.plane_id, new_plane.size, request.form)
+
+        flash(f"Success! Plane {new_plane.plane_id} by {Plane.manufacturer} has been added to the company's fleet.")
         return redirect(url_for('add_plane'))
-    else:
-        flash(f"Error: {message}")
-        return redirect(url_for('add_plane'))
+
+@app.route('/manager-dashboard/add-operating-line', methods=['GET', 'POST'])
+def new_operating_line():
+    if not session.get('is_manager'):
+        flash("Access Denied. Managers only.")
+        return redirect(url_for('manager_login'))
+
+    if request.method == 'GET':
+        return render_template('add-operating-line.html')
+
+    if request.method == 'POST':
+        new_line = OperatingLine(
+            src_country=request.form.get('src_country'),
+            src_city=request.form.get('src_city'),
+            src_airport=request.form.get('src_airport'),
+            dst_country=request.form.get('dst_country'),
+            dst_city=request.form.get('dst_city'),
+            dst_airport=request.form.get('dst_airport'),
+            flight_duration= request.form.get('flight_duration')
+        )
+
+        success, message = add_to_sql(new_line)
+
+        if not success:
+            flash(f"Error creating new operating line: {message}")
+            return redirect(url_for('new_operating_line'))
+
+        else:
+            flash(f"Success! A new line from {new_line.src_country}, {new_line.src_city} to {new_line.dst_country}, {new_line.dst_city} has been created!")
+            return redirect(url_for('new_operating_line'))
+
+
+
 
 
 

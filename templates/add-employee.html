@@ -19,11 +19,12 @@
             <span style="color: #00a8e8; margin-right: 20px; font-weight: bold;">
                 <i class="fas fa-user-tie"></i> {{ session['user_name'] }}
             </span>
+            <a href="{{ url_for('manager_dashboard') }}">More Operations</a>
             <a href="{{ url_for('logout') }}" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </nav>
 
-    <div class="auth-wrapper bg-add-employee">
+    <div class="auth-wrapper bg-add-Line">
 
         <div class="registration-container" style="max-width: 600px; width: 100%;">
 

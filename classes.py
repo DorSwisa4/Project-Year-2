@@ -59,7 +59,7 @@ class RegisteredCustomer:
 # ==========================================
 
 class Plane:
-    def __init__(self, plane_id, manufacturer, purchase_date, size):
+    def __init__(self, manufacturer, purchase_date, size, plane_id = None):
         self.plane_id = plane_id
         self.manufacturer = manufacturer
         self.purchase_date = purchase_date
@@ -270,9 +270,6 @@ class Location:
 
             # D. Update lookup to the new real country
             Location.current_locations[emp_id] = destination
-
-
-
 
 
 

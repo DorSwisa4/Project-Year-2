@@ -40,15 +40,24 @@ body {
     align-items: center;
 }
 
+.nav-links {
+    display: flex;            /* Forces items into one row */
+    align-items: center;      /* Vertically centers items */
+    justify-content: flex-end; /* Pushes everything to the right */
+    white-space: nowrap;      /* Prevents wrapping to new lines */
+    gap: 25px;                /* Adds space between items automatically */
+}
+
 .nav-links a {
     color: #fff;
     text-decoration: none;
     font-weight: 600;
     font-size: 0.9rem;
-    margin-left: 25px;
     transition: color 0.3s;
+    /* Removed margin-left and display:flex because the parent handles it */
 }
 
+/* Optional: Add hover effect */
 .nav-links a:hover {
     color: #00a8e8;
 }
@@ -249,6 +258,20 @@ body {
                       url('add-employee background.png');
     background-position: top center;
 }
+
+.bg-add-plane {
+    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+                      url('new-plane background.png');
+    background-position: top center;
+}
+
+.bg-add-Line {
+    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+                      url('add-line background.png');
+    background-position: top center;
+}
+
+
 
 /* The White Form Container */
 .registration-container {
@@ -491,4 +514,169 @@ label.required::after {
     color: #d32f2f;
     font-weight: bold;
     text-decoration: none;
+}
+
+
+/* =========================================
+   7. BOOKING PAGE STYLES (COMPACT + NAVBAR FIX)
+   ========================================= */
+
+.booking-page-body {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.8)),
+                      url('../static/booking-background.png');
+    background-size: cover;
+    background-position: center;
+
+    /* Full viewport height handling */
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+
+    /* Layout */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /* Fix for Fixed Navbar: Add padding equal to navbar height */
+    padding-top: 60px;
+    box-sizing: border-box;
+}
+
+.booking-container {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+
+    width: 100%;
+    max-width: 500px; /* Compact width */
+    max-height: calc(100vh - 80px); /* Ensure it fits in remaining space */
+
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Internal scroll if screen is very small */
+}
+
+.booking-container h1 {
+    text-align: center;
+    color: #02122c;
+    margin-bottom: 10px;
+    font-size: 1.4rem;
+}
+
+/* Compact Flight Summary */
+.flight-summary {
+    background: #f0f8ff;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    border-left: 4px solid #00a8e8;
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.flight-summary h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #00a8e8;
+}
+
+.flight-summary p {
+    margin: 0;
+    color: #555;
+}
+
+/* Compact Form */
+.form-section {
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
+.form-section h2 {
+    font-size: 0.95rem;
+    color: #444;
+    margin-bottom: 8px;
+}
+
+.input-group {
+    margin-bottom: 6px;
+}
+
+.input-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.input-group input {
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.row {
+    display: flex;
+    gap: 10px;
+}
+
+.ticket-option {
+    display: flex;
+    flex-direction: column;
+    background: #fafafa;
+    padding: 5px;
+    border-radius: 4px;
+    flex: 1;
+}
+
+.ticket-option input {
+    width: 100%;
+    margin-top: 2px;
+}
+
+.submit-booking-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #00a8e8;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.submit-booking-btn:hover {
+    background-color: #008ecc;
+}
+
+.add-phone-btn {
+    font-size: 0.75rem;
+    margin-top: 2px;
+    color: #00a8e8;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+}
+/* הודעות שגיאה */
+.flash-messages {
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.alert-box {
+    background-color: #ffe6e6; /* רקע אדמדם */
+    color: #d32f2f; /* טקסט אדום כהה */
+    border: 1px solid #ffcccc;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-align: center;
+    font-weight: bold;
 }
