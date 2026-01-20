@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Your Seats</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="seat-selection-body">
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('home') }}" style="text-decoration: none;">
+                <h2 style="color:white; font-weight:800;">Fly-Tau</h2>
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}">Home</a>
+                {% if session.get('user_name') %}
+                    <span style="color: #00a8e8; margin-left: 20px; font-weight: bold;">
+                        {{ session['user_name'] }}
+                    </span>
+                    <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:2000;display:flex;justify-content:center;align-items:center;">
+            <div class="alert-box" style="background:white;padding:30px;border-radius:10px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+              <h3 style="margin-top:0;color:#d32f2f;">Notice</h3>
+              <p>{{ messages[0] }}</p>
+              <br>
+              <a href="{{ url_for('seat_selection') }}" style="background:#00a8e8;color:white;padding:8px 20px;text-decoration:none;border-radius:6px;font-weight:bold;">OK</a>
+            </div>
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="main-layout">
+
+        <div class="info-sidebar">
+            <h2>Hello, {{ booking.first_name }}</h2>
+
+            <div class="instructions">
+                <p>Please select your seats:</p>
+            </div>
+
+            {% if booking.tickets_business > 0 %}
+            <div class="counter-box business">
+                <span class="counter-text">Business Class</span>
+                <span class="counter-number">
+                    <span id="count-bus">0</span> / {{ booking.tickets_business }}
+                </span>
+            </div>
+            {% endif %}
+
+            {% if booking.tickets_economy > 0 %}
+            <div class="counter-box economy">
+                <span class="counter-text">Economy Class</span>
+                <span class="counter-number">
+                    <span id="count-eco">0</span> / {{ booking.tickets_economy }}
+                </span>
+            </div>
+            {% endif %}
+
+            <div class="legend">
+                <div class="legend-item"><div class="seat-demo available"></div> Available</div>
+                <div class="legend-item"><div class="seat-demo selected"></div> Selected</div>
+                <div class="legend-item"><div class="seat-demo occupied"></div> Occupied</div>
+            </div>
+
+            <button type="submit" form="seats-form" class="finish-btn" id="confirm-btn" disabled>Confirm Seats & Proceed to Payment</button>
+
+            <button onclick="history.back()" class="back-btn">
+                Change Booking Details
+            </button>
+        </div>
+
+        <div class="plane-container">
+            <div class="cockpit"><i class="fas fa-plane"></i></div>
+
+            <form id="seats-form" action="/seat-selection" method="POST">
+                <div class="fuselage">
+
+                    {% for class_section in layout %}
+                        <div class="class-section">
+                            <h3 class="class-title">{{ class_section.class_type }} Class</h3>
+
+                            {% set half_cols = (class_section.num_columns / 2) | int %}
+
+                            {% for r in range(1, class_section.num_rows + 1) %}
+                                <div class="plane-row">
+                                    {% for c_idx in range(class_section.num_columns) %}
+
+                                        {% if c_idx == half_cols %}
+                                            <div class="aisle-spacer">
+                                                <span class="row-number">{{ r }}</span>
+                                            </div>
+                                        {% endif %}
+
+                                        {% set col_char = col_letters[c_idx] %}
+                                        {% set raw_seat_id = r ~ '-' ~ col_char %}
+                                        {% set unique_chk_id = class_section.class_type ~ '-' ~ raw_seat_id %}
+
+                                        <div class="seat-wrapper">
+                                            {% if raw_seat_id in occupied_seats %}
+                                                <div class="seat occupied">{{ col_char }}</div>
+                                            {% else %}
+                                                <input type="checkbox"
+                                                       id="chk-{{ unique_chk_id }}"
+                                                       name="selected_seats"
+                                                       value="{{ raw_seat_id }}"
+                                                       data-class-type="{{ class_section.class_type }}"
+                                                       class="seat-checkbox">
+
+                                                <label for="chk-{{ unique_chk_id }}" class="seat available">
+                                                    {{ col_char }}
+                                                </label>
+                                            {% endif %}
+                                        </div>
+
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const limitBusiness = {{ booking.tickets_business }};
+            const limitEconomy = {{ booking.tickets_economy }};
+
+            const checkboxes = document.querySelectorAll('.seat-checkbox');
+            const confirmBtn = document.getElementById('confirm-btn');
+
+            const busCounter = document.getElementById('count-bus');
+            const ecoCounter = document.getElementById('count-eco');
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const seatType = this.getAttribute('data-class-type');
+
+                    const currentBus = document.querySelectorAll('.seat-checkbox[data-class-type="Business"]:checked').length;
+                    const currentEco = document.querySelectorAll('.seat-checkbox[data-class-type="Economy"]:checked').length;
+
+                    // Validation
+                    if (seatType === 'Business' && currentBus > limitBusiness) {
+                        this.checked = false;
+                        alert("You can only select " + limitBusiness + " Business Class seats.");
+                        return;
+                    }
+                    if (seatType === 'Economy' && currentEco > limitEconomy) {
+                        this.checked = false;
+                        alert("You can only select " + limitEconomy + " Economy Class seats.");
+                        return;
+                    }
+
+                    // Update Counters
+                    if (busCounter) busCounter.textContent = currentBus;
+                    if (ecoCounter) ecoCounter.textContent = currentEco;
+
+                    // Enable/Disable Button
+                    const finalBus = document.querySelectorAll('.seat-checkbox[data-class-type="Business"]:checked').length;
+                    const finalEco = document.querySelectorAll('.seat-checkbox[data-class-type="Economy"]:checked').length;
+
+                    if (finalBus === limitBusiness && finalEco === limitEconomy) {
+                        confirmBtn.disabled = false;
+                        confirmBtn.style.opacity = "1";
+                        confirmBtn.style.cursor = "pointer";
+                    } else {
+                        confirmBtn.disabled = true;
+                        confirmBtn.style.opacity = "0.7";
+                        confirmBtn.style.cursor = "not-allowed";
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
