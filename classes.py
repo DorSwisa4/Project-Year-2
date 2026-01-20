@@ -113,7 +113,7 @@ class Flight:
 # ==========================================
 
 class Order:
-    def __init__(self, order_code, total_cost, status='Active', guest_email=None, registered_email=None):
+    def __init__(self, total_cost, status='Active', guest_email=None, registered_email=None, order_code = None):
         self.order_code = order_code
         self.guest_email = guest_email
         self.registered_email = registered_email
@@ -121,7 +121,7 @@ class Order:
         self.status = status
 
 class Ticket:
-    def __init__(self, ticket_number, flight_id, plane_id, class_type, row_num, col_num, order_code, price, guest_email=None, registered_email=None):
+    def __init__(self, flight_id, plane_id, class_type, row_num, col_num, order_code, price, guest_email=None, registered_email=None, ticket_number = None):
         self.ticket_number = ticket_number
         self.flight_id = flight_id
         self.plane_id = plane_id

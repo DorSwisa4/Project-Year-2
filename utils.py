@@ -1,6 +1,6 @@
 import mysql.connector
 from classes import *
-from datetime import date
+from datetime import datetime, timedelta
 
 # DB Configuration
 db_config = {
@@ -151,6 +151,11 @@ def add_to_sql(obj):
 
             # Execute the standard SQL prepared above
             cursor.execute(sql, values)
+            if isinstance(obj, Order):
+                obj.order_code = cursor.lastrowid
+
+            if isinstance(obj,Plane):
+                obj.plane_id = cursor.lastrowid
             conn.commit()
             print(f"Successfully added {type(obj).__name__} to DB!")
             return True, f"Successfully added {type(obj).__name__} to DB!"
@@ -385,8 +390,24 @@ def get_flight_details(flight_id):
 
         # Mocking prices for now (as requested)
         if flight:
-            flight['price_economy'] = 150  # Base price example
-            flight['price_business'] = 400 if flight['size'] == 'Big' else 0
+
+            flight['price_economy'] = flight['base_price']
+            flight['price_business'] = 0  # ברירת מחדל
+
+            if flight['size'] == 'Big':
+                query_supp = """
+                            SELECT price_supplement 
+                            FROM Seats 
+                            WHERE plane_id = %s AND class_type = 'Business' 
+                            LIMIT 1
+                        """
+                cursor.execute(query_supp, (flight['plane_id'],))
+                result = cursor.fetchone()
+
+                if result:
+                    # המרה ל-float/decimal כדי לחבר מחירים
+                    supplement = result['price_supplement']
+                    flight['price_business'] = flight['base_price'] + supplement
 
     except mysql.connector.Error as err:
         print(f"Error fetching flight details: {err}")
@@ -846,3 +867,236 @@ def get_available_resources_for_flight(src_country, query_date_str):
         'pilots': valid_pilots,
         'attendants': valid_attendants
     }
+
+
+def get_customer_orders_history(email):
+    """
+    Fetches all orders for a specific registered customer.
+    Calculates the 'Actual Paid' amount based on status.
+    Determines if cancellation is allowed (Time > 36 hours).
+    """
+    conn = None
+    cursor = None
+    orders = []
+
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        # We join Orders -> Tickets -> Flights to get location and time data
+        # We Group By Order Code to count tickets per order
+        query = """
+            SELECT 
+                O.order_code, 
+                O.total_cost, 
+                O.status as order_status,
+                F.src_city,
+                F.dst_city,
+                F.departure_time,
+                F.flight_id,
+                COUNT(T.ticket_number) as ticket_count
+            FROM Orders O
+            JOIN Tickets T ON O.order_code = T.order_code
+            JOIN Flights F ON T.flight_id = F.flight_id
+            WHERE O.registered_email = %s
+            GROUP BY O.order_code, O.total_cost, O.status, F.src_city, F.dst_city, F.departure_time, F.flight_id
+            ORDER BY F.departure_time DESC
+        """
+
+        cursor.execute(query, (email,))
+        results = cursor.fetchall()
+
+        now = datetime.now()
+
+        for row in results:
+            # 1. Calculate "Actual Paid" logic
+            status = row['order_status']
+            cost = float(row['total_cost'])
+
+            if status == 'CancelledBySystem':
+                row['actual_paid'] = 0
+            elif status == 'CancelledByCustomer':
+                row['actual_paid'] = cost * 0.05  # Customer pays 5% penalty
+            else:
+                row['actual_paid'] = cost
+
+            # 2. Check 36 Hours Rule for Cancellation Button
+            # Calculate time difference
+            flight_time = row['departure_time']
+            time_diff = flight_time - now
+
+            # Button is active ONLY if:
+            # 1. Status is Active
+            # 2. Time to flight is more than 36 hours
+            if status == 'Active' and time_diff > timedelta(hours=36):
+                row['can_cancel'] = True
+            else:
+                row['can_cancel'] = False
+
+            orders.append(row)
+
+    except mysql.connector.Error as err:
+        print(f"Error fetching history: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+    return orders
+
+
+def cancel_order_by_user(order_code):
+    """
+    Updates order status to 'CancelledByCustomer'.
+    Does NOT delete the row, just updates status.
+    """
+    conn = None
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        sql = "UPDATE Orders SET status = 'CancelledByCustomer' WHERE order_code = %s"
+        cursor.execute(sql, (order_code,))
+        conn.commit()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Error canceling order: {err}")
+        return False
+    finally:
+        if conn: conn.close()
+
+def get_plane_layout(plane_id):
+
+    conn = None
+    cursor = None
+    layout = []
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT class_type, num_rows, num_columns 
+            FROM Classes 
+            WHERE plane_id = %s 
+            ORDER BY class_type ASC
+        """
+        cursor.execute(query, (plane_id,))
+        layout = cursor.fetchall()
+
+    except mysql.connector.Error as err:
+        print(f"Error fetching layout: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+    return layout
+
+
+def get_occupied_seats(flight_id):
+
+    conn = None
+    cursor = None
+    occupied = set()
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        query = "SELECT row_num, col_num FROM Tickets WHERE flight_id = %s"
+        cursor.execute(query, (flight_id,))
+
+        for (r, c) in cursor.fetchall():
+            occupied.add(f"{r}-{c}")  # format: "5-A"
+
+    except mysql.connector.Error as err:
+        print(f"Error fetching occupied seats: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+    return occupied
+
+
+
+def is_email_registered(email):
+    conn = None
+    cursor = None
+    exists = False
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        cursor.execute("SELECT email FROM RegisteredCustomers WHERE email = %s", (email,))
+        if cursor.fetchone():
+            exists = True
+    except mysql.connector.Error as err:
+        print(f"Error checking email: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+    return exists
+
+
+def ensure_guest_exists(email, first_name, last_name, phones):
+
+    conn = None
+    cursor = None
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        # 1. בדיקה אם קיים
+        cursor.execute("SELECT email FROM GuestCustomers WHERE email = %s", (email,))
+        if not cursor.fetchone():
+            # הוספה לטבלת אורחים
+            cursor.execute(
+                "INSERT INTO GuestCustomers (email, first_name_en, last_name_en) VALUES (%s, %s, %s)",
+                (email, first_name, last_name)
+            )
+
+        for phone in phones:
+            if phone.strip():
+                cursor.execute("SELECT * FROM GuestPhones WHERE email=%s AND phone_number=%s", (email, phone))
+                if not cursor.fetchone():
+                    cursor.execute("INSERT INTO GuestPhones (email, phone_number) VALUES (%s, %s)", (email, phone))
+
+        conn.commit()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Error ensuring guest: {err}")
+        if conn: conn.rollback()
+        return False
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+
+def check_and_update_flight_status(flight_id):
+
+    conn = None
+    cursor = None
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        # 1. כמה מושבים יש סך הכל במטוס של הטיסה הזו?
+        # אנו צריכים את ה-plane_id מתוך הטיסה, ואז לסכום את ה-total_seats מ-Classes
+        query_total = """
+            SELECT SUM(C.total_seats) 
+            FROM Classes C
+            JOIN Flights F ON F.plane_id = C.plane_id
+            WHERE F.flight_id = %s
+        """
+        cursor.execute(query_total, (flight_id,))
+        result = cursor.fetchone()
+        total_capacity = result[0] if result and result[0] else 0
+
+        cursor.execute("SELECT COUNT(*) FROM Tickets WHERE flight_id = %s", (flight_id,))
+        sold_count = cursor.fetchone()[0]
+
+        if sold_count >= total_capacity:
+            cursor.execute("UPDATE Flights SET status = 'Full' WHERE flight_id = %s", (flight_id,))
+            conn.commit()
+            print(f"Flight {flight_id} is now FULL.")
+
+    except mysql.connector.Error as err:
+        print(f"Error updating flight status: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+

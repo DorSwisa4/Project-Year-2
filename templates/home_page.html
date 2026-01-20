@@ -9,26 +9,28 @@
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="nav-content">
-            <h2 style="color:white; font-weight:800;">Fly-Tau</h2>
+<nav class="navbar">
+    <div class="nav-content">
+        <h2 style="color:white; font-weight:800;">Fly-Tau</h2>
 
-            <div class="nav-links">
-                {% if 'user_name' in session %}
-                    <span style="color: #00a8e8; margin-left: 20px; font-weight: bold;">
-                        Hello, {{ session['user_name'] }}
-                    </span>
-                    <a href="#">My Bookings History</a>
-                    <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">Logout</a>
-                {% else %}
-                    <a href="{{ url_for('signup') }}">Sign up</a>
-                    <a href="#">Find My booking</a>
-                    <a href="{{ url_for('login') }}">Login</a>
-                    <a href="{{ url_for('manager_login') }}">Manager Login</a>
-                {% endif %}
-            </div>
+        <div class="nav-links">
+            {% if 'user_name' in session %}
+                <span style="color: #00a8e8; margin-left: 20px; font-weight: bold;">
+                    Hello, {{ session['user_name'] }}
+                </span>
+
+                <a href="{{ url_for('my_bookings') }}">My Bookings</a>
+
+                <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">Logout</a>
+            {% else %}
+                <a href="{{ url_for('signup') }}">Sign up</a>
+                <a href="#">Find My Booking</a>
+                <a href="{{ url_for('login') }}">Login</a>
+                <a href="{{ url_for('manager_login') }}">Manager Login</a>
+            {% endif %}
         </div>
-    </nav>
+    </div>
+</nav>
 
     <div class="hero-section" id="top-of-page">
         <div class="hero-content">
