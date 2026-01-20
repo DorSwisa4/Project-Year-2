@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Revenue Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* No Scroll Layout */
+        body { overflow: hidden; }
+        .report-wrapper {
+            display: flex;
+            height: 75vh; /* Fits in screen */
+            gap: 40px;
+            align-items: center;
+        }
+        .text-panel {
+            flex: 1;
+            padding: 20px;
+            font-size: 1.2rem; /* Larger text */
+        }
+        .chart-panel {
+            flex: 2;
+            height: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <a href="{{ url_for('manager_dashboard') }}" class="back-to-top-btn" style="font-size: 1.1rem;">&larr; Back to Dashboard</a>
+
+        <h2 class="section-title" style="font-size: 2rem; margin-bottom: 20px;">Monthly Revenue Analysis</h2>
+
+        <div class="report-wrapper">
+            <div class="text-panel">
+                <div style="background-color: white; padding: 30px; border-radius: 12px; border-left: 6px solid #00a8e8; box-shadow: 0 5px 20px rgba(0,0,0,0.05);">
+                    <h3 style="color: #00a8e8; margin-bottom: 15px; font-size: 1.5rem;">Report Insights</h3>
+                    <p style="color: #444; line-height: 1.6;">
+                        This chart tracks the financial performance of the airline over time.
+                        <br><br>
+                        <strong>Y-Axis:</strong> Represents total revenue in USD ($).
+                        <br>
+                        <strong>X-Axis:</strong> Represents the timeline (Months).
+                        <br><br>
+                        Use this to identify seasonal trends and growth patterns.
+                    </p>
+                </div>
+            </div>
+
+            <div class="chart-panel">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        // Global Font Size Increase
+        Chart.defaults.font.size = 16;
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ labels | tojson }},
+                datasets: [{
+                    label: 'Total Revenue ($)',
+                    data: {{ values | tojson }},
+                    borderColor: '#00a8e8',
+                    backgroundColor: 'rgba(0, 168, 232, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { font: { size: 18, weight: 'bold' } } }
+                },
+                scales: {
+                    x: { ticks: { font: { size: 14 } } },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { font: { size: 14 } }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

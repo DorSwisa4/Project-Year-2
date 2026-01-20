@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fly-Tau - Schedule Flight</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .step-container { margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 5px solid #00a8e8; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .hidden { display: none; }
+        .modern-select, .modern-input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; }
+        .info-box { background: #e3f2fd; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 0.9em; color: #0d47a1; border: 1px solid #bbdefb;}
+        .badge-long { background-color: #dc3545; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
+        .badge-short { background-color: #28a745; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('manager_dashboard') }}" style="text-decoration: none;">
+                <h2 style="color:white; font-weight:800;">Fly-Tau<span style="font-weight:300; font-size: 0.8em; opacity: 0.8;">| Management</span></h2>
+            </a>
+        </div>
+        <div class="nav-links">
+            <span style="color: #00a8e8; font-weight: bold;">
+                <i class="fas fa-user-tie"></i> {{ session['user_name'] }}
+            </span>
+            <a href="{{ url_for('manager_dashboard') }}">Back</a>
+            <a href="{{ url_for('logout') }}" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="auth-wrapper bg-schedule">
+        <div class="registration-container" style="max-width: 800px; width: 100%;">
+
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div style="background-color: #e3f2fd; border-left: 5px solid #2196F3; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                    {% for message in messages %}
+                    <p style="margin: 0; color: #333;">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
+
+            <h2 style="color: #02122c; text-align: center; margin-bottom: 25px;">
+                <i class="fas fa-calendar-plus"></i> Schedule Flight
+            </h2>
+
+            <form action="{{ url_for('schedule_flight') }}" method="POST" id="scheduleForm">
+
+                <div class="step-container">
+                    <h4><i class="fas fa-map-marker-alt"></i> 1. Select Route</h4>
+
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex:1;">
+                            <label>Source Country</label>
+                            <select id="src_country" name="src_country" class="modern-select" required onchange="filterCities('src')">
+                                <option value="">Select Country...</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;">
+                            <label>Source City</label>
+                            <select id="src_city" name="src_city" class="modern-select" required onchange="filterAirports('src')">
+                                <option value="">Select City...</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;">
+                            <label>Source Airport</label>
+                            <select id="src_airport" name="src_airport" class="modern-select" required onchange="updateDestOptions()">
+                                <option value="">Select Airport...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin-top: 15px;">
+                        <div style="flex:1;">
+                            <label>Dest Country</label>
+                            <select id="dst_country" name="dst_country" class="modern-select" required onchange="filterDstCities()">
+                                <option value="">Select Country...</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;">
+                            <label>Dest City</label>
+                            <select id="dst_city" name="dst_city" class="modern-select" required onchange="filterDstAirports()">
+                                <option value="">Select City...</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;">
+                            <label>Dest Airport</label>
+                            <select id="dst_airport" name="dst_airport" class="modern-select" required onchange="checkRouteComplete()">
+                                <option value="">Select Airport...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-time" class="step-container hidden">
+                    <h4><i class="fas fa-clock"></i> 2. Date & Price</h4>
+                    <div class="info-box">
+                        <i class="fas fa-stopwatch"></i> Flight Duration: <span id="display-duration" style="font-weight:bold;"></span>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin-top: 15px;">
+                        <div style="flex:1;">
+                            <label>Departure Date</label>
+                            <input type="date" id="dept_date" name="dept_date" class="modern-input" required onchange="calculateLanding()">
+                        </div>
+                        <div style="flex:1;">
+                            <label>Departure Time</label>
+                            <input type="time" id="dept_time" name="dept_time" class="modern-input" required onchange="calculateLanding()">
+                        </div>
+                        <div style="flex:1;">
+                            <label>Base Ticket Price ($)</label>
+                            <input type="number" name="base_price" class="modern-input" placeholder="e.g. 300" min="0" required>
+                        </div>
+                    </div>
+
+                    <div class="info-box" id="landing-box" style="display:none; background: #e8f5e9; border: 1px solid #c8e6c9; color: #2e7d32;">
+                        <i class="fas fa-plane-arrival"></i> Predicted Landing: <span id="landing-display" style="font-weight:bold;"></span>
+                        <input type="hidden" id="landing_datetime" name="landing_datetime">
+                    </div>
+                </div>
+
+                <div id="step-resources" class="step-container hidden">
+                    <h4><i class="fas fa-users-cog"></i> 3. Assign Resources</h4>
+                    <div id="flight-type-badge" style="display:inline-block; margin-bottom:15px;"></div>
+
+                    <div class="form-group">
+                        <label>Select Plane <span style="color:red">*</span></label>
+                        <select id="plane-select" name="selected_plane" class="modern-select" required>
+                            </select>
+                    </div>
+
+                    <div style="display:flex; gap:15px; margin-top:15px;">
+                        <div style="flex:1;">
+                            <label>Select Pilots (<span id="pilot-count-req">0</span> required)</label>
+                            <select id="pilot-select" name="selected_pilots" class="modern-select" multiple required style="height: 120px;">
+                                </select>
+                            <small style="color: #666; font-size: 0.8em;">Hold Ctrl (Win) or Cmd (Mac) to select multiple.</small>
+                        </div>
+
+                        <div style="flex:1;">
+                            <label>Select Attendants (<span id="attendant-count-req">0</span> required)</label>
+                            <select id="attendant-select" name="selected_attendants" class="modern-select" multiple required style="height: 120px;">
+                                </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="submit-btn hidden" style="margin-top: 20px;">
+                    <i class="fas fa-check-circle"></i> Confirm Schedule
+                </button>
+            </form>
+        </div>
+    </div>
+
+<script>
+    let allLines = [];
+    let currentDuration = "";
+
+    window.onload = function() {
+        fetch('/api/schedule-data', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: 'get_lines'})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) { alert(data.error); return; }
+            allLines = data;
+
+            // Only populate Source Countries initially
+            populateSourceCountries();
+        })
+        .catch(err => console.error(err));
+    };
+
+    // --- 1. POPULATE SOURCE ---
+    function populateSourceCountries() {
+        let srcCountries = [...new Set(allLines.map(item => item.src_country))];
+        fillSelect('src_country', srcCountries);
+    }
+
+    // --- 2. CASCADING SOURCE DROPDOWNS ---
+    function filterCities(side) {
+        if (side !== 'src') return;
+
+        let country = document.getElementById('src_country').value;
+        let relevant = allLines.filter(l => l.src_country === country);
+        let cities = [...new Set(relevant.map(l => l.src_city))];
+
+        fillSelect('src_city', cities);
+        fillSelect('src_airport', []);
+        resetDestination(); // Reset destination because source changed
+    }
+
+    function filterAirports(side) {
+        if (side !== 'src') return;
+
+        let country = document.getElementById('src_country').value;
+        let city = document.getElementById('src_city').value;
+        let relevant = allLines.filter(l => l.src_country === country && l.src_city === city);
+        let airports = [...new Set(relevant.map(l => l.src_airport))];
+
+        fillSelect('src_airport', airports);
+        resetDestination();
+    }
+
+    // --- 3. TRIGGER DESTINATION OPTIONS (The Fix) ---
+    // This runs when a Source Airport is selected
+    function updateDestOptions() {
+        let sAirport = document.getElementById('src_airport').value;
+
+        if (!sAirport) {
+            resetDestination();
+            return;
+        }
+
+        console.log("Source Selected:", sAirport, "- Filtering Destinations...");
+
+        // Filter lines to ONLY those starting from the selected airport
+        let validRoutes = allLines.filter(l => l.src_airport === sAirport);
+
+        // Populate Destination Country based on valid routes
+        let dstCountries = [...new Set(validRoutes.map(l => l.dst_country))];
+        fillSelect('dst_country', dstCountries);
+
+        // Clear subsequent dest fields
+        fillSelect('dst_city', []);
+        fillSelect('dst_airport', []);
+    }
+
+    // --- 4. CASCADING DESTINATION DROPDOWNS ---
+    function filterDstCities() {
+        let sAirport = document.getElementById('src_airport').value;
+        let dCountry = document.getElementById('dst_country').value;
+
+        // Filter: Lines from Source Airport AND to Dest Country
+        let relevant = allLines.filter(l => l.src_airport === sAirport && l.dst_country === dCountry);
+        let cities = [...new Set(relevant.map(l => l.dst_city))];
+
+        fillSelect('dst_city', cities);
+        fillSelect('dst_airport', []);
+    }
+
+    function filterDstAirports() {
+        let sAirport = document.getElementById('src_airport').value;
+        let dCountry = document.getElementById('dst_country').value;
+        let dCity = document.getElementById('dst_city').value;
+
+        // Filter: Lines from Source Airport AND to Dest City
+        let relevant = allLines.filter(l =>
+            l.src_airport === sAirport &&
+            l.dst_country === dCountry &&
+            l.dst_city === dCity
+        );
+        let airports = [...new Set(relevant.map(l => l.dst_airport))];
+
+        fillSelect('dst_airport', airports);
+    }
+
+    // --- HELPER FUNCTIONS ---
+    function fillSelect(id, items) {
+        let select = document.getElementById(id);
+        select.innerHTML = '<option value="">Select...</option>';
+        items.forEach(i => {
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.innerHTML = i;
+            select.appendChild(opt);
+        });
+    }
+
+    function resetDestination() {
+        fillSelect('dst_country', []);
+        fillSelect('dst_city', []);
+        fillSelect('dst_airport', []);
+        document.getElementById('step-time').classList.add('hidden');
+        document.getElementById('step-resources').classList.add('hidden');
+    }
+
+    // --- 5. CHECK ROUTE & RESOURCES ---
+    function checkRouteComplete() {
+        let sA = document.getElementById('src_airport').value;
+        let dA = document.getElementById('dst_airport').value;
+
+        if (sA && dA) {
+            let line = allLines.find(l => l.src_airport === sA && l.dst_airport === dA);
+            if (line) {
+                currentDuration = line.flight_duration;
+                document.getElementById('step-time').classList.remove('hidden');
+                document.getElementById('display-duration').innerText = currentDuration;
+
+                // If the user already filled date/time, verify landing
+                if(document.getElementById('dept_date').value && document.getElementById('dept_time').value) {
+                     calculateLanding();
+                }
+            }
+        }
+    }
+
+    function calculateLanding() {
+        let dDate = document.getElementById('dept_date').value;
+        let dTime = document.getElementById('dept_time').value;
+
+        if(dDate && dTime && currentDuration) {
+            let departure = new Date(dDate + 'T' + dTime);
+            let parts = currentDuration.split(':');
+            departure.setHours(departure.getHours() + parseInt(parts[0]));
+            departure.setMinutes(departure.getMinutes() + parseInt(parts[1]));
+
+            let year = departure.getFullYear();
+            let month = String(departure.getMonth() + 1).padStart(2, '0');
+            let day = String(departure.getDate()).padStart(2, '0');
+            let h = String(departure.getHours()).padStart(2, '0');
+            let m = String(departure.getMinutes()).padStart(2, '0');
+            let s = String(departure.getSeconds()).padStart(2, '0');
+
+            let landingStr = `${year}-${month}-${day} ${h}:${m}:${s}`;
+            document.getElementById('landing-display').innerText = landingStr;
+            document.getElementById('landing_datetime').value = landingStr;
+            document.getElementById('landing-box').style.display = 'block';
+
+            fetchResources();
+        }
+    }
+
+    function fetchResources() {
+        let sCountry = document.getElementById('src_country').value;
+        let dDate = document.getElementById('dept_date').value;
+        let dTime = document.getElementById('dept_time').value;
+
+        if (!sCountry || !dDate || !dTime) return;
+
+        console.log("Fetching resources...");
+
+        fetch('/api/schedule-data', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'get_resources',
+                src_country: sCountry,
+                dept_date: dDate,
+                dept_time: dTime,
+                duration: currentDuration
+            })
+        })
+        .then(r => r.json())
+        .then(data => renderResourceStep(data))
+        .catch(e => console.error(e));
+    }
+
+    function renderResourceStep(data) {
+        let step = document.getElementById('step-resources');
+        step.classList.remove('hidden');
+        document.getElementById('submit-btn').classList.remove('hidden');
+
+        let badge = document.getElementById('flight-type-badge');
+        let isLong = data.is_long_flight;
+        badge.innerText = isLong ? "Long Flight (>6h)" : "Short Flight";
+        badge.className = isLong ? "badge-long" : "badge-short";
+
+        let pSelect = document.getElementById('plane-select');
+        pSelect.innerHTML = '<option value="">Select Plane...</option>';
+        if (!data.planes || data.planes.length === 0) {
+            let opt = document.createElement('option');
+            opt.disabled = true;
+            opt.innerHTML = "No suitable planes available in " + document.getElementById('src_country').value;
+            pSelect.appendChild(opt);
+        } else {
+            data.planes.forEach(p => {
+                let opt = document.createElement('option');
+                opt.value = p[0];
+                opt.innerHTML = `${p[1]} (ID: ${p[0]}) - ${p[2]}`;
+                pSelect.appendChild(opt);
+            });
+        }
+
+        // Update Pilot/Attendant count based on plane size selection
+        pSelect.onchange = function() {
+            if(this.selectedIndex > 0) {
+                let isBig = this.options[this.selectedIndex].text.includes('Big');
+                document.getElementById('pilot-count-req').innerText = isBig ? 3 : 2;
+                document.getElementById('attendant-count-req').innerText = isBig ? 6 : 3;
+            }
+        };
+
+        fillCrewSelect('pilot-select', data.pilots);
+        fillCrewSelect('attendant-select', data.attendants);
+    }
+
+    function fillCrewSelect(id, list) {
+        let s = document.getElementById(id);
+        s.innerHTML = '';
+        if(!list || list.length === 0) {
+            let opt = document.createElement('option');
+            opt.disabled = true;
+            opt.innerHTML = "No available crew found";
+            s.appendChild(opt);
+            return;
+        }
+        list.forEach(c => {
+            let trainingBadge = c[3] ? " [Trained]" : "";
+            let opt = document.createElement('option');
+            opt.value = c[0];
+            opt.innerHTML = `${c[1]} ${c[2]} (ID: ${c[0]})${trainingBadge}`;
+            s.appendChild(opt);
+        });
+    }
+</script>
+
+</body>
+</html>

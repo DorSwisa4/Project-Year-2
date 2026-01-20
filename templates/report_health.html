@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Operational Health</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { overflow: hidden; }
+        .report-wrapper { display: flex; height: 75vh; gap: 40px; align-items: center; }
+        .text-panel { flex: 1; padding: 20px; font-size: 1.2rem; }
+        .chart-panel { flex: 2; height: 100%; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; justify-content: center; }
+    </style>
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <a href="{{ url_for('manager_dashboard') }}" class="back-to-top-btn" style="font-size: 1.1rem;">&larr; Back to Dashboard</a>
+        <h2 class="section-title" style="font-size: 2rem; margin-bottom: 20px;">Order Status Distribution</h2>
+
+        <div class="report-wrapper">
+            <div class="text-panel">
+                <div style="background-color: white; padding: 30px; border-radius: 12px; border-left: 6px solid #d32f2f; box-shadow: 0 5px 20px rgba(0,0,0,0.05);">
+                    <h3 style="color: #d32f2f; margin-bottom: 15px; font-size: 1.5rem;">Health Check</h3>
+                    <p style="color: #444; line-height: 1.6;">
+                        A breakdown of all system orders by their current status.
+                        <br><br>
+                        High rates of <strong>Cancelled (Customer)</strong> may indicate pricing or UX issues.
+                        <br>
+                        <strong>Cancelled (System)</strong> usually indicates technical failures or flight cancellations.
+                    </p>
+                </div>
+            </div>
+
+            <div class="chart-panel">
+                <div style="width: 80%; height: 100%;">
+                    <canvas id="healthChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('healthChart').getContext('2d');
+        Chart.defaults.font.size = 16;
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ labels | tojson }},
+                datasets: [{
+                    data: {{ values | tojson }},
+                    backgroundColor: ['#4caf50', '#2196f3', '#ff9800', '#f44336'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 20, font: { size: 16 } }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
