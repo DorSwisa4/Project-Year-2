@@ -505,12 +505,25 @@ def new_operating_line():
             flight_duration= request.form.get('flight_duration')
         )
 
-        success, message = add_to_sql(new_line)
+        return_line = OperatingLine(
+            src_country=request.form.get('dst_country'),
+            src_city=request.form.get('dst_city'),
+            src_airport=request.form.get('dst_airport'),
+            dst_country=request.form.get('src_country'),
+            dst_city=request.form.get('src_city'),
+            dst_airport=request.form.get('src_airport'),
+            flight_duration=request.form.get('flight_duration')
+        )
 
-        if not success:
-            flash(f"Error creating new operating line: {message}")
+        success1, message1 = add_to_sql(new_line)
+        success2, message2 = add_to_sql(return_line)
+
+        if not success1:
+            flash(f"Error creating forward line: {message1}")
             return redirect(url_for('new_operating_line'))
-
+        elif not success2:
+            flash(f"Forward line created, but error creating return line: {message2}")
+            return redirect(url_for('new_operating_line'))
         else:
             flash(f"Success! A new line from {new_line.src_country}, {new_line.src_city} to {new_line.dst_country}, {new_line.dst_city} has been created!")
             return redirect(url_for('new_operating_line'))
