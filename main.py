@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import date
-from classes import RegisteredCustomer, EmployeeFactory, Plane, OperatingLine
+from classes import *
 from utils import *
+import mysql.connector
+
 
 app = Flask(__name__)
 
@@ -13,7 +15,7 @@ db_config = {
     'user': 'root',  # Your MySQL username
     'password': 'root',  # Your MySQL password
     'host': 'localhost',
-    'database': 'AirlineDB'
+    'database': 'airlinedb'
 }
 
 
@@ -115,7 +117,8 @@ def order_page(flight_id):
 
         session['temp_booking'] = booking_data
 
-        return "Redirecting to Seat Selection Page... (Next Step)"
+        return redirect(url_for('seat_selection'))
+
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -499,6 +502,153 @@ def error(e):
     return redirect(url_for('home'))
 
 
+@app.route('/seat-selection', methods=['GET', 'POST'])
+def seat_selection():
+    if 'temp_booking' not in session:
+        return redirect(url_for('home'))
+
+    booking_data = session['temp_booking']
+    flight_id = booking_data['flight_id']
+
+    total_needed = int(booking_data['tickets_economy']) + int(booking_data['tickets_business'])
+
+    if request.method == 'GET':
+        flight = get_flight_details(flight_id)
+        layout = get_plane_layout(flight['plane_id'])
+        occupied_seats = get_occupied_seats(flight_id)
+
+        col_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+        return render_template('seat_selection.html',
+                               flight=flight,
+                               layout=layout,
+                               occupied_seats=occupied_seats,
+                               booking=booking_data,
+                               col_letters=col_letters,
+                               total_needed=total_needed)
+
+    if request.method == 'POST':
+        selected_seats = request.form.getlist('selected_seats')
+
+        if len(selected_seats) != total_needed:
+            flash(f"Almost there! You selected {len(selected_seats)} seats — please select exactly {total_needed} seats to continue.")
+            return redirect(url_for('seat_selection'))
+
+        session['temp_booking']['selected_seats'] = selected_seats
+        session.modified = True
+
+        flash("Great choice! Your seats have been selected. Let’s move on to payment.")
+        return redirect(url_for('payment_page'))
+
+
+@app.route('/payment', methods=['GET', 'POST'])
+def payment_page():
+    if 'temp_booking' not in session:
+        return redirect(url_for('home'))
+
+    booking_data = session['temp_booking']
+    flight_id = booking_data['flight_id']
+    flight = get_flight_details(flight_id)
+
+    total_price = (int(booking_data['tickets_economy']) * flight['price_economy']) + \
+                  (int(booking_data['tickets_business']) * flight['price_business'])
+
+    if request.method == 'GET':
+        return render_template('payment.html', price=total_price, booking=booking_data, flight=flight)
+
+    if request.method == 'POST':
+        email = booking_data['email']
+
+        is_registered = is_email_registered(email)
+
+        guest_email_val = None
+        registered_email_val = None
+
+        if is_registered:
+            registered_email_val = email
+        else:
+            guest_email_val = email
+            ensure_guest_exists(
+                email,
+                booking_data['first_name'],
+                booking_data['last_name'],
+                booking_data['phones']
+            )
+
+        new_order = Order(
+            order_code=None,
+            total_cost=total_price,
+            status='Active',
+            guest_email=guest_email_val,
+            registered_email=registered_email_val
+        )
+
+        success, msg = add_to_sql(new_order)  # זה יעדכן את new_order.order_code
+        if not success:
+            flash("Error processing order.")
+            return redirect(url_for('payment_page'))
+
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        try:
+            for seat_code in booking_data['selected_seats']:
+                parts = seat_code.split('-')
+                row_str = parts[0]
+                col_str = parts[1]
+
+                # המרה ל-INT חשובה כדי למנוע אי תאימות מול ה-DB
+                row_num = int(row_str)
+
+                # שליפת פרטי המושב
+                query_seat = """SELECT class_type, price_supplement FROM Seats 
+                                        WHERE plane_id = %s AND row_num = %s AND col_num = %s"""
+                cursor.execute(query_seat, (flight['plane_id'], row_num, col_str))
+                seat_info = cursor.fetchone()
+
+                # בדיקה קריטית 1: האם המושב נמצא?
+                if not seat_info:
+                    print(f"CRITICAL ERROR: Seat {seat_code} not found for plane {flight['plane_id']}!")
+                    continue  # מדלג למושב הבא כדי לא לקרוס
+
+                final_ticket_price = flight['base_price'] + seat_info['price_supplement']
+
+                new_ticket = Ticket(
+                    ticket_number=None,
+                    flight_id=flight_id,
+                    plane_id=flight['plane_id'],
+                    class_type=seat_info['class_type'],
+                    row_num=row_num,
+                    col_num=col_str,
+                    order_code=new_order.order_code,
+                    price=final_ticket_price,
+                    guest_email=guest_email_val,
+                    registered_email=registered_email_val
+                )
+
+                # בדיקה קריטית 2: האם הכרטיס נשמר?
+                success_t, msg_t = add_to_sql(new_ticket)
+                if not success_t:
+                    print(f"SQL INSERT FAILED for seat {seat_code}: {msg_t}")
+                    # כאן תראה במסך השחור למטה בדיוק למה זה נכשל (למשל Foreign Key)
+                else:
+                    print(f"Ticket for seat {seat_code} saved successfully.")
+
+        except Exception as e:
+            print(f"EXCEPTION in ticket creation loop: {e}")
+
+        finally:
+            cursor.close()
+            conn.close()
+
+        check_and_update_flight_status(flight_id)
+
+        session.pop('temp_booking', None)
+        return render_template('confirmation.html',
+                               order_id=new_order.order_code,
+                               flight=flight,
+                               booking=booking_data,
+                               price=total_price)
 if __name__ == '__main__':
     app.run(debug=True)
 
