@@ -11,16 +11,16 @@
 
     <nav class="navbar">
         <div class="nav-content">
-            <a href="{{ url_for('home') }}" style="text-decoration: none;">
-                <h2 style="color:white; font-weight:800;">Fly-Tau</h2>
+            <a href="{{ url_for('home') }}" class="brand-logo">
+                <h2>Fly-Tau</h2>
             </a>
 
             <div class="nav-links">
-                <span style="color: #00a8e8; margin-right: 20px; font-weight: bold;">
+                <span class="user-greeting">
                     Hello, {{ session['user_name'] }}
                 </span>
                 <a href="{{ url_for('home') }}">Home</a>
-                <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">Logout</a>
+                <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
             </div>
         </div>
     </nav>
@@ -29,31 +29,31 @@
 
         {% with messages = get_flashed_messages() %}
             {% if messages %}
-                <div class="alert-box" style="margin: 20px 0;">{{ messages[0] }}</div>
+                <div class="alert-box">{{ messages[0] }}</div>
             {% endif %}
         {% endwith %}
 
-        <h3 class="section-title">My Order History</h3>
+        <h3 class="section-title">My Booking History</h3>
 
         <div class="filter-bar">
-            <i class="fas fa-filter" style="color: #00a8e8;"></i>
-            <span style="font-weight: 600; color: #555;">Filter by Status:</span>
+            <i class="fas fa-filter icon-blue"></i>
+            <span class="filter-label">Filter Orders:</span>
 
-            <select id="statusFilter" class="modern-select" style="width: 200px;" onchange="filterOrders()">
-                <option value="all">Show All</option>
+            <select id="statusFilter" class="modern-select filter-select" onchange="filterOrders()">
+                <option value="all">All Statuses</option>
                 <option value="Active">Active</option>
                 <option value="Completed">Completed</option>
-                <option value="CancelledByCustomer">Cancelled (By Me)</option>
-                <option value="CancelledBySystem">Cancelled (By Airline)</option>
+                <option value="CancelledByCustomer">Cancelled by Me</option>
+                <option value="CancelledBySystem">Cancelled by Airline</option>
             </select>
         </div>
 
         <div class="scrollable-flights">
 
             {% if not orders %}
-                <div style="padding: 50px; text-align: center; color: #666;">
-                    <h3><i class="fas fa-ticket-alt"></i> No bookings found</h3>
-                    <p>You haven't made any orders yet.</p>
+                <div class="no-bookings-msg">
+                    <h3>No bookings found.</h3>
+                    <a href="{{ url_for('home') }}">Book your first flight now!</a>
                 </div>
             {% endif %}
 
@@ -61,7 +61,7 @@
             <div class="flight-card order-row" data-status="{{ order.order_status }}">
 
                 <div class="flight-info">
-                    <div style="margin-bottom: 8px;">
+                    <div class="flight-header">
                         <span class="order-id-badge">Order #{{ order.order_code }}</span>
                         <span class="time-badge">
                             <i class="far fa-clock"></i> {{ order.departure_time }}
@@ -70,28 +70,27 @@
 
                     <h3>
                         {{ order.src_city }}
-                        <i class="fas fa-long-arrow-alt-right" style="color: #aaa; margin: 0 10px;"></i>
+                        <i class="fas fa-arrow-right arrow-icon"></i>
                         {{ order.dst_city }}
                     </h3>
 
-                    <div style="margin-top: 5px; color: #555; font-size: 0.9em;">
-                        <i class="fas fa-users"></i> Tickets Included: <strong>{{ order.ticket_count }}</strong>
+                    <div class="ticket-count">
+                        <i class="fas fa-ticket-alt"></i> Tickets: <strong>{{ order.ticket_count }}</strong>
                     </div>
                 </div>
 
-                <div style="display: flex; align-items: center;">
-
+                <div class="flight-actions">
                     <div class="cost-display">
-                        <span class="cost-label">Total Paid</span>
+                        <span class="cost-label">Actually Paid</span>
                         <span class="cost-value">${{ order.actual_paid }}</span>
                         {% if order.order_status == 'CancelledByCustomer' %}
-                            <span style="font-size: 0.7em; color: #d32f2f;">(5% Fee Applied)</span>
+                            <span class="penalty-text">(5% Penalty)</span>
                         {% endif %}
                     </div>
 
                     <span class="status-badge status-{{ order.order_status|lower }}">
                         {% if order.order_status == 'CancelledByCustomer' %}
-                            Cancelled (You)
+                            Cancelled (Client)
                         {% elif order.order_status == 'CancelledBySystem' %}
                             Cancelled (System)
                         {% else %}
@@ -100,19 +99,12 @@
                     </span>
 
                     {% if order.can_cancel %}
-                        <a href="{{ url_for('cancel_order', order_code=order.order_code, flight_id=order.flight_id) }}"
-                           class="cancel-flight-btn"
-                           onclick="return confirm('Cancellation Policy: You will be refunded 95% of the total cost. Proceed?');">
+                        <a href="{{ url_for('ask_cancel_page', order_code=order.order_code) }}" class="cancel-flight-btn">
                             Cancel Order
                         </a>
                     {% else %}
-                        <div class="cancel-disabled">
-                            {% if order.order_status == 'Active' %}
-                                <i class="fas fa-lock"></i> < 36h
-                            {% endif %}
-                        </div>
+                        <div class="spacer-box"></div>
                     {% endif %}
-
                 </div>
             </div>
             {% endfor %}
@@ -122,12 +114,13 @@
 
     <script>
         function filterOrders() {
-            const filter = document.getElementById('statusFilter').value;
+            const filterValue = document.getElementById('statusFilter').value;
             const rows = document.querySelectorAll('.order-row');
 
             rows.forEach(row => {
                 const status = row.getAttribute('data-status');
-                if (filter === 'all' || status === filter) {
+
+                if (filterValue === 'all' || status === filterValue) {
                     row.style.display = 'flex';
                 } else {
                     row.style.display = 'none';
@@ -135,6 +128,5 @@
             });
         }
     </script>
-
 </body>
 </html>

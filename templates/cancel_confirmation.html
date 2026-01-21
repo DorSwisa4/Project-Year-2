@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fly-Tau - Confirm Cancellation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-body">
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <h2 class="brand-text">Fly-Tau</h2>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+
+        <div class="confirm-box">
+            <i class="fas fa-exclamation-circle warning-icon"></i>
+
+            <h2>Cancel This Booking?</h2>
+            <p class="confirm-text">
+                Are you sure you want to cancel order <strong>#{{ order.order_code }}</strong>?
+                This action cannot be undone.
+            </p>
+
+            <div class="flight-route-large">
+                {{ order.src_city }}
+                <i class="fas fa-long-arrow-alt-right arrow-gray"></i>
+                {{ order.dst_city }}
+            </div>
+
+            <p class="departure-text">
+                Departure: {{ order.departure_time }}
+            </p>
+
+            <div class="details-grid">
+                <div class="detail-row">
+                    <span>Original Price:</span>
+                    <span>${{ order.total_cost }}</span>
+                </div>
+                <div class="detail-row fee-text">
+                    <span>Cancellation Fee (5%):</span>
+                    <span>- ${{ order.cancellation_fee }}</span>
+                </div>
+                <div class="detail-row total">
+                    <span>Refund Amount:</span>
+                    <span class="refund-text">${{ order.refund_amount }}</span>
+                </div>
+            </div>
+
+            <div class="confirm-actions">
+                <form action="{{ url_for('perform_cancel', order_code=order.order_code) }}" method="POST" class="form-yes">
+                    <button type="submit" class="btn-yes">
+                        Yes, Cancel Order
+                    </button>
+                </form>
+
+                {% if 'user_email' in session %}
+                    <a href="{{ url_for('my_bookings') }}" class="btn-no">No, Go Back</a>
+                {% else %}
+                    <a href="{{ url_for('find_my_booking_page') }}" class="btn-no">No, Go Back</a>
+                {% endif %}
+            </div>
+
+        </div>
+
+    </div>
+</body>
+</html>

@@ -28,6 +28,14 @@
 
     <div class="dashboard-container">
 
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert-box" style="background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; margin-bottom: 20px; padding: 15px; border-radius: 8px;">
+                    <i class="fas fa-exclamation-circle"></i> {{ messages[0] }}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <h3 class="section-title">Operational Actions</h3>
         <div class="actions-toolbar">
 
@@ -81,7 +89,9 @@
                 <a href="{{ url_for('report_cancellations') }}" class="view-report-btn">View Report</a>
             </div>
 
-        </div> <h3 class="section-title">Flight Management History</h3>
+        </div>
+
+        <h3 class="section-title">Flight Management History</h3>
 
         <div class="scrollable-flights" style="margin-bottom: 50px;">
 
@@ -101,6 +111,14 @@
                         <span style="color: #666; font-size: 0.9em; margin-left: 10px;">
                             ID: {{ flight.flight_id }}
                         </span>
+
+                        <span style="color: #666; font-size: 0.9em; margin-left: 10px;">
+                            <i class="fas fa-tag"></i> ${{ flight.base_price }}
+                        </span>
+
+                        <span style="color: #666; font-size: 0.9em; margin-left: 10px;">
+                            <i class="fas fa-plane"></i> {{ flight.plane_size }}
+                        </span>
                     </div>
                 </div>
 
@@ -116,7 +134,7 @@
                     </span>
 
                     {% if flight.status != 'Cancelled' and flight.status != 'Landed' %}
-                        <a href="{{ url_for('home') }}cancel-flight.html" class="cancel-flight-btn">
+                        <a href="{{ url_for('manager_ask_cancel_flight', flight_id=flight.flight_id) }}" class="cancel-flight-btn">
                             Cancel Flight
                         </a>
                     {% else %}
@@ -124,6 +142,7 @@
                              Action Unavailable
                          </span>
                     {% endif %}
+
                 </div>
 
             </div>

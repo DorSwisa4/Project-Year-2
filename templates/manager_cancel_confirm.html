@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager - Cancel Flight</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-body">
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <h2 class="brand-text">Fly-Tau <span style="font-weight:300; font-size:0.8em;">| Management</span></h2>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+
+        <div class="confirm-box">
+            <i class="fas fa-radiation-alt warning-icon"></i>
+
+            <h2>System Cancellation</h2>
+            <p class="confirm-text">
+                Are you sure you want to cancel <strong>Flight #{{ flight.flight_id }}</strong>?
+            </p>
+
+            <div class="alert-box" style="background: #fff3e0; border: 1px solid #ffe0b2; color: #ef6c00; margin-bottom: 20px;">
+                <i class="fas fa-exclamation-triangle"></i>
+                Warning: This will cancel <strong>{{ flight.impacted_passengers }}</strong> active orders.
+                Customers will be fully refunded.
+            </div>
+
+            <div class="flight-route-large">
+                {{ flight.src_city }}
+                <i class="fas fa-plane arrow-gray"></i>
+                {{ flight.dst_city }}
+            </div>
+
+            <p class="departure-text">
+                Departure: {{ flight.departure_time }}
+            </p>
+
+            <div class="confirm-actions">
+                <form action="{{ url_for('manager_perform_cancel_flight', flight_id=flight.flight_id) }}" method="POST" class="form-yes">
+                    <button type="submit" class="btn-yes">
+                        Yes, Cancel Flight
+                    </button>
+                </form>
+
+                <a href="{{ url_for('manager_dashboard') }}" class="btn-no">No, Go Back</a>
+            </div>
+
+        </div>
+
+    </div>
+</body>
+</html>
