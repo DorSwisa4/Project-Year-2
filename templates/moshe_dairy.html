@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uncle Moshe's Dairy Farm</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- General Settings --- */
+        :root {
+            --primary-black: #222;
+            --primary-white: #fff;
+            --accent-green: #4CAF50;
+            --accent-blue: #2196F3;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Nunito', sans-serif;
+            color: var(--primary-black);
+
+            /* --- CORRECTED IMAGE PATH USING FLASK SYNTAX --- */
+            /* Ensure cow-bg.jfif is also in your static folder! */
+            background-image: url("{{ url_for('static', filename='cow-bg.jfif') }}");
+            background-repeat: repeat;
+            background-size: 400px;
+            background-attachment: fixed;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Fredoka One', cursive;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+
+        /* --- Layout Containers --- */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card-box {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 4px solid var(--primary-black);
+            text-align: center;
+        }
+
+        /* --- Header --- */
+        header {
+            text-align: center;
+            padding: 20px;
+            background: var(--primary-white);
+            border-bottom: 5px solid var(--primary-black);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            color: var(--primary-black);
+        }
+        .logo span { color: var(--accent-green); }
+
+        /* --- Hero Section --- */
+        .hero-title {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px #ddd;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: #555;
+            margin-bottom: 30px;
+        }
+
+        /* --- Team Grid --- */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .photo-frame {
+            background: white;
+            padding: 15px 15px 50px 15px; /* Polaroid style padding */
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            transform: rotate(-2deg);
+            transition: transform 0.3s ease;
+        }
+
+        .photo-frame:nth-child(even) {
+            transform: rotate(2deg);
+        }
+
+        .photo-frame:hover {
+            transform: scale(1.05) rotate(0deg);
+            z-index: 10;
+        }
+
+        .photo-frame img {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+            border: 1px solid #eee;
+        }
+
+        .photo-caption {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            margin-top: 20px;
+            color: var(--primary-black);
+        }
+
+        /* --- Stock Gallery Grid --- */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .gallery-item {
+            height: 220px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid var(--primary-black);
+            position: relative;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.15);
+        }
+
+        /* --- Footer --- */
+        footer {
+            background-color: var(--primary-black);
+            color: white;
+            text-align: center;
+            padding: 40px;
+            border-top: 5px solid var(--accent-green);
+        }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2.5rem; }
+            .card-box { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">🐮 Uncle <span>Moshe</span></div>
+        <div style="margin-top: 10px;">
+            <a href="{{ url_for('about_us') }}" style="text-decoration: none; color: #333; font-weight: bold;">&larr; Back to Fly-Tau</a>
+        </div>
+    </header>
+
+    <div class="main-container">
+
+        <div class="card-box">
+            <h1 class="hero-title">Welcome to the Barn!</h1>
+            <p class="hero-subtitle">Premium Dairy & Happy Cows since 2026</p>
+            <p>We believe that happy cows make the best milk. Come visit our shed and meet the team.</p>
+        </div>
+
+        <div class="card-box">
+            <h2>Meet The Crew</h2>
+            <div class="team-grid">
+                <div class="photo-frame">
+                    <img src="{{ url_for('static', filename='cowshed1.jpeg') }}" alt="The Team">
+                    <div class="photo-caption">The Dream Team 🚜</div>
+                </div>
+                <div class="photo-frame">
+                    <img src="{{ url_for('static', filename='cowshed2.jpeg') }}" alt="Working Hard">
+                    <div class="photo-caption">Feeding Time 🌾</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-box">
+            <h2>Life on the Farm</h2>
+            <p style="margin-bottom: 30px;">A glimpse into our daily routine.</p>
+
+            <div class="gallery-grid">
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1546445317-29f4545e9d53?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Cute Cow Face">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1563636619-e9143da7973b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Fresh Milk">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1516467508483-a7212febe31a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Barn Interior">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Cheese Production">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Funny Cow">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1500595046743-cd271d694d30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Cows Grazing">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1596733430282-7438317e0591?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Baby Calf">
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Black and White Cow">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <h3>Uncle Moshe's Dairy</h3>
+        <p>123 Moo Lane, Kibbutz Hahalav</p>
+        <p>&copy; 2026 All Rights Reserved</p>
+    </footer>
+
+</body>
+</html>
