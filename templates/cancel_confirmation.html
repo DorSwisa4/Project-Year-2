@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="dashboard-body">
+
+<body>
 
     <nav class="navbar">
         <div class="nav-content">
@@ -15,7 +16,7 @@
         </div>
     </nav>
 
-    <div class="dashboard-container">
+    <div class="auth-wrapper bg-cancel">
 
         <div class="confirm-box">
             <i class="fas fa-exclamation-circle warning-icon"></i>
@@ -65,8 +66,5 @@
                 {% endif %}
             </div>
 
-        </div>
-
-    </div>
-</body>
+        </div> </div> </body>
 </html>

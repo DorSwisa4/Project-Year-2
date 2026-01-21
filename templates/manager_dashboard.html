@@ -6,6 +6,49 @@
     <title>Fly-Tau - Manager Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Reusing and adapting filter styles for the dashboard */
+        .dashboard-filter-bar {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #00a8e8;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .dashboard-select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+            font-size: 0.9rem;
+            color: #495057;
+            outline: none;
+            cursor: pointer;
+        }
+        .dashboard-select:focus {
+            border-color: #00a8e8;
+            background-color: white;
+        }
+    </style>
 </head>
 <body class="dashboard-body">
 
@@ -38,65 +81,81 @@
 
         <h3 class="section-title">Operational Actions</h3>
         <div class="actions-toolbar">
-
             <a href="{{ url_for('add_employee') }}" class="toolbar-btn">
                 <i class="fas fa-user-plus fa-2x" style="margin-bottom: 10px; color: #00a8e8;"></i>
                 <span style="font-weight: 600;">Add Employee</span>
             </a>
-
             <a href="{{ url_for('add_plane') }}" class="toolbar-btn">
                 <i class="fas fa-plane fa-2x" style="margin-bottom: 10px; color: #00a8e8;"></i>
                 <span style="font-weight: 600;">Add Plane</span>
             </a>
-
             <a href="{{ url_for('new_operating_line') }}" class="toolbar-btn">
                 <i class="fas fa-route fa-2x" style="margin-bottom: 10px; color: #00a8e8;"></i>
                 <span style="font-weight: 600;">New Operating Line</span>
             </a>
-
             <a href="{{ url_for('schedule_flight') }}" class="toolbar-btn">
                 <i class="fas fa-calendar-alt fa-2x" style="margin-bottom: 10px; color: #00a8e8;"></i>
                 <span style="font-weight: 600;">Schedule Flight</span>
             </a>
-
         </div>
 
         <h3 class="section-title">Strategic Reports</h3>
-
         <div class="reports-grid">
-
             <div class="report-card">
                 <i class="fas fa-percent report-icon"></i>
                 <div class="report-title">Flight Load Factor</div>
                 <a href="{{ url_for('report_load_factor') }}" class="view-report-btn">View Report</a>
             </div>
-
             <div class="report-card">
                 <i class="fas fa-chart-line report-icon"></i>
                 <div class="report-title">Monthly Revenue</div>
                 <a href="{{ url_for('report_revenue') }}" class="view-report-btn">View Report</a>
             </div>
-
             <div class="report-card">
                 <i class="fas fa-map-marked-alt report-icon"></i>
                 <div class="report-title">Route Popularity</div>
                 <a href="{{ url_for('report_popular_routes') }}" class="view-report-btn">View Report</a>
             </div>
-
             <div class="report-card">
                 <i class="fas fa-heartbeat report-icon"></i>
                 <div class="report-title">Operational Health</div>
                 <a href="{{ url_for('report_cancellations') }}" class="view-report-btn">View Report</a>
             </div>
-
         </div>
 
         <h3 class="section-title">Flight Management History</h3>
 
-        <div class="scrollable-flights" style="margin-bottom: 50px;">
+        <div class="dashboard-filter-bar">
+            <div class="filter-group">
+                <i class="fas fa-filter" style="color: #00a8e8;"></i>
+                <span class="filter-label">Filter Status:</span>
+                <select id="statusFilter" class="dashboard-select" onchange="applyManagerFilters()">
+                    <option value="all">All Statuses</option>
+                    <option value="Active">Active Only</option>
+                    <option value="Landed">Landed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Full">Full</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <i class="fas fa-sort-amount-down" style="color: #00a8e8;"></i>
+                <span class="filter-label">Sort By:</span>
+                <select id="sortFilter" class="dashboard-select" onchange="applyManagerFilters()">
+                    <option value="date_asc">Date (Soonest First)</option>
+                    <option value="date_desc">Date (Latest First)</option>
+                    <option value="id_desc">Flight ID</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="scrollable-flights" id="flightContainer" style="margin-bottom: 50px;">
 
             {% for flight in flights %}
-            <div class="flight-card">
+            <div class="flight-card flight-row"
+                 data-status="{{ flight.status }}"
+                 data-timestamp="{{ flight.departure_time }}"
+                 data-id="{{ flight.flight_id }}">
 
                 <div class="flight-info">
                     <h3>
@@ -151,6 +210,54 @@
         </div>
 
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Run default sort (Soonest First) on load
+            applyManagerFilters();
+        });
+
+        function applyManagerFilters() {
+            const container = document.getElementById('flightContainer');
+            const rows = Array.from(document.querySelectorAll('.flight-row'));
+
+            // 1. GET VALUES
+            const statusFilter = document.getElementById('statusFilter').value;
+            const sortValue = document.getElementById('sortFilter').value;
+
+            // 2. FILTERING
+            rows.forEach(row => {
+                const status = row.getAttribute('data-status');
+
+                // Show row if "all" is selected OR status matches
+                if (statusFilter === 'all' || status === statusFilter) {
+                    row.style.display = 'flex';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // 3. SORTING
+            // Create a new array of visible rows to sort (or sort all and display logic handles visibility)
+            rows.sort((a, b) => {
+                const dateA = new Date(a.getAttribute('data-timestamp'));
+                const dateB = new Date(b.getAttribute('data-timestamp'));
+                const idA = parseInt(a.getAttribute('data-id'));
+                const idB = parseInt(b.getAttribute('data-id'));
+
+                if (sortValue === 'date_asc') {
+                    return dateA - dateB; // Earliest date first
+                } else if (sortValue === 'date_desc') {
+                    return dateB - dateA; // Latest date first
+                } else if (sortValue === 'id_desc') {
+                    return idB - idA; // Highest ID first
+                }
+            });
+
+            // Re-append rows in new order
+            rows.forEach(row => container.appendChild(row));
+        }
+    </script>
 
 </body>
 </html>
