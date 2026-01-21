@@ -1742,3 +1742,167 @@ select[multiple] option:checked {
 .cancel-flight-btn:hover {
     background-color: #b02a37;
 }
+
+
+/* =========================================
+   11. BOOKING HISTORY & FIND BOOKING
+   ========================================= */
+
+/* Common Elements */
+.brand-logo { text-decoration: none; }
+.brand-logo h2 { color: white; font-weight: 800; }
+.brand-text { color: white; font-weight: 800; }
+.user-greeting { color: #00a8e8; margin-right: 20px; font-weight: bold; }
+.logout-link { color: #ff4d4d !important; }
+
+/* Filter Bar */
+.filter-bar {
+    background: white;
+    padding: 15px 25px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-left: 4px solid #00a8e8;
+}
+.icon-blue { color: #00a8e8; }
+.filter-label { font-weight: 600; color: #555; }
+.filter-select { width: 200px; }
+
+/* Empty States */
+.no-bookings-msg { padding: 40px; text-align: center; color: #666; }
+.no-bookings-msg a { color: #00a8e8; }
+
+/* Order Cards */
+.flight-header { margin-bottom: 5px; }
+.order-id-badge {
+    background: #e3f2fd;
+    color: #0277bd;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-right: 15px;
+    border: 1px solid #bbdefb;
+}
+.arrow-icon { font-size: 0.8em; color: #aaa; margin: 0 10px; }
+.ticket-count { margin-top: 5px; color: #666; font-size: 0.9em; }
+
+/* Flight Actions (Right Side) */
+.flight-actions { display: flex; align-items: center; }
+.cost-display {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-right: 25px;
+    text-align: right;
+}
+.cost-label {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.cost-value { font-size: 1.1rem; font-weight: 800; color: #333; }
+.penalty-text { font-size: 0.7em; color: red; }
+.spacer-box { width: 120px; }
+
+/* Status Colors */
+.status-completed { background-color: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
+.status-cancelledbycustomer { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+.status-cancelledbysystem { background-color: #fff3e0; color: #ef6c00; border: 1px solid #ffe0b2; }
+
+/* Find Booking Specifics */
+.flex-column { flex-direction: column; padding-top: 80px; }
+.flash-error-container {
+    margin-bottom: 20px;
+    border-left: 5px solid #ff4d4d;
+    text-align: center;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+}
+.flash-error-container p { color: #d32f2f; font-weight: bold; margin: 0; }
+.search-container { max-width: 500px; }
+.result-container { width: 100%; max-width: 900px; }
+.white-bg { background: white; border-radius: 12px; padding: 30px; min-height: auto; }
+.booking-details-title { color: #333; margin-bottom: 20px; border-bottom: 2px solid #00a8e8; padding-bottom: 10px; }
+.shadow-card { border: 1px solid #eee; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+.cancel-disabled { color: #ccc; font-size: 0.9rem; font-style: italic; cursor: not-allowed; margin-left: 10px; }
+.search-again-wrapper { text-align: center; margin-top: 25px; }
+.search-again-link { color: #00a8e8; font-weight: bold; text-decoration: none; }
+
+/* Cancel Confirmation Page */
+.confirm-box {
+    background: white;
+    max-width: 500px;
+    margin: 50px auto;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    text-align: center;
+    border-top: 5px solid #d32f2f;
+}
+.warning-icon { font-size: 3rem; color: #d32f2f; margin-bottom: 20px; }
+.confirm-text { color: #666; margin-bottom: 20px; }
+.flight-route-large {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #333;
+    margin: 15px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+.arrow-gray { color: #999; }
+.departure-text { color: #888; font-size: 0.9rem; margin-bottom: 20px; }
+.details-grid {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    text-align: left;
+}
+.detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; }
+.detail-row.total {
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+    margin-top: 10px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+.fee-text { color: #d32f2f; }
+.refund-text { color: #2e7d32; }
+.confirm-actions { display: flex; gap: 15px; margin-top: 30px; }
+.form-yes { flex: 1; }
+.btn-yes {
+    width: 100%;
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+.btn-yes:hover { background-color: #b71c1c; }
+.btn-no {
+    flex: 1;
+    background-color: #e0e0e0;
+    color: #333;
+    text-decoration: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.btn-no:hover { background-color: #d5d5d5; }

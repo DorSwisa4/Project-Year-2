@@ -24,7 +24,7 @@
                 <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">Logout</a>
             {% else %}
                 <a href="{{ url_for('signup') }}">Sign up</a>
-                <a href="#">Find My Booking</a>
+                <a href="{{ url_for('find_my_booking_page') }}">Find My Booking</a>
                 <a href="{{ url_for('login') }}">Login</a>
                 <a href="{{ url_for('manager_login') }}">Manager Login</a>
             {% endif %}
@@ -125,18 +125,27 @@
             {% if flights %}
                 {% for flight in flights %}
                 <div class="flight-card">
-                    <div class="flight-info">
+                     <div class="flight-info">
                         <h3>
                             <i class="fas fa-plane-departure" style="margin-right:10px;"></i> {{ flight.src_city }}
                             <span style="color: #aaa; margin: 0 15px; font-size: 0.8em;"><i class="fas fa-long-arrow-alt-right"></i></span>
                             {{ flight.dst_city }} <i class="fas fa-plane-arrival" style="margin-left:10px;"></i>
                         </h3>
+
                         <div class="sub-info">
                             <span class="time-badge">
                                 <i class="far fa-clock"></i> {{ flight.departure_time }}
                             </span>
                             <span class="flight-id-badge">
                                 ID: {{ flight.flight_id }}
+                            </span>
+
+                            <span style="margin-left: 15px; font-weight: bold; color: #444;">
+                                 <i class="fas fa-tag" style="color: #00a8e8;"></i> ${{ flight.base_price }}
+                            </span>
+
+                            <span style="margin-left: 10px; background: #eee; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; color: #666;">
+                                 <i class="fas fa-plane"></i> {{ flight.size }}
                             </span>
                         </div>
                     </div>

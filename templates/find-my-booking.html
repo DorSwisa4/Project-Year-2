@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fly-Tau - Find Booking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-signup">
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('home') }}" class="brand-logo">
+                <h2>Fly-Tau</h2>
+            </a>
+
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ url_for('signup') }}">Sign up</a>
+                <a href="{{ url_for('login') }}">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="auth-wrapper flex-column">
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-error-container">
+                    <p>{{ messages[0] }}</p>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if not order %}
+        <div class="registration-container search-container">
+            <div class="form-header">
+                <h2><i class="fas fa-search-location"></i> Find My Booking</h2>
+                <p>Enter your details to view or manage your flight.</p>
+            </div>
+
+            <form action="{{ url_for('find_my_booking_page') }}" method="POST">
+
+                <div class="form-group">
+                    <label>Order Serial Number</label>
+                    <input type="number" name="order_code" class="modern-input" placeholder="e.g., 1054" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" class="modern-input" placeholder="The email used for booking" required>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    Find Booking
+                </button>
+
+            </form>
+        </div>
+        {% endif %}
+
+        {% if order %}
+        <div class="dashboard-container result-container">
+            <div class="sky-background white-bg">
+                <h3 class="booking-details-title">Booking Details</h3>
+
+                <div class="flight-card shadow-card">
+
+                    <div class="flight-info">
+                        <div class="flight-header">
+                            <span class="order-id-badge">Order #{{ order.order_code }}</span>
+                            <span class="time-badge">
+                                <i class="far fa-clock"></i> {{ order.departure_time }}
+                            </span>
+                        </div>
+
+                        <h3>
+                            {{ order.src_city }}
+                            <i class="fas fa-long-arrow-alt-right arrow-icon"></i>
+                            {{ order.dst_city }}
+                        </h3>
+
+                        <div class="ticket-count">
+                            <i class="fas fa-users"></i> Tickets: <strong>{{ order.ticket_count }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="flight-actions">
+
+                        <div class="cost-display">
+                            <span class="cost-label">Total Paid</span>
+                            <span class="cost-value">${{ order.actual_paid }}</span>
+                            {% if order.order_status == 'CancelledByCustomer' %}
+                                <span class="penalty-text">(5% Fee)</span>
+                            {% endif %}
+                        </div>
+
+                        <span class="status-badge status-{{ order.order_status|lower }}">
+                            {% if order.order_status == 'CancelledByCustomer' %}
+                                Cancelled (You)
+                            {% elif order.order_status == 'CancelledBySystem' %}
+                                Cancelled (System)
+                            {% else %}
+                                {{ order.order_status }}
+                            {% endif %}
+                        </span>
+
+                        {% if order.can_cancel %}
+                            <a href="{{ url_for('ask_cancel_page', order_code=order.order_code) }}" class="cancel-flight-btn">
+                                Cancel Order
+                            </a>
+                        {% else %}
+                            <div class="cancel-disabled">
+                                {% if order.order_status == 'Active' %}
+                                    <i class="fas fa-lock"></i> < 36h
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+
+                <div class="search-again-wrapper">
+                    <a href="{{ url_for('find_my_booking_page') }}" class="search-again-link">
+                        <i class="fas fa-search"></i> Search Another Booking
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</body>
+</html>
