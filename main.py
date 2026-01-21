@@ -676,7 +676,8 @@ def api_schedule_data():
 @app.route('/manager-dashboard/schedule-flight', methods=['GET', 'POST'])
 def schedule_flight():
     """
-    This function processes the scheduling of a new flight by validating the departure time, creating the flight record, and assigning the selected crew members.
+    This function processes the scheduling of a new flight by validating the departure time
+    AND the crew counts, then creating the flight record.
     """
 
     if not session.get('is_manager'):
@@ -700,18 +701,42 @@ def schedule_flight():
         dept_time = request.form.get('dept_time')
         landing_datetime = request.form.get('landing_datetime')
 
-        # --- NEW VALIDATION: Prevent Past Dates ---
+        # --- VALIDATION 1: Prevent Past Dates ---
         departure_dt_str = f"{dept_date} {dept_time}"
-        departure_dt_obj = datetime.strptime(departure_dt_str, "%Y-%m-%d %H:%M")
-
-        if departure_dt_obj < datetime.now():
-            flash("Error: You cannot schedule a flight in the past!")
+        try:
+            departure_dt_obj = datetime.strptime(departure_dt_str, "%Y-%m-%d %H:%M")
+            if departure_dt_obj < datetime.now():
+                flash("Error: You cannot schedule a flight in the past!")
+                return redirect(url_for('schedule_flight'))
+        except ValueError:
+            flash("Error: Invalid date format.")
             return redirect(url_for('schedule_flight'))
-        # ------------------------------------------
 
+        # --- VALIDATION 2: Crew Counts ---
         plane_id = request.form.get('selected_plane')
         pilot_ids = request.form.getlist('selected_pilots')
         attendant_ids = request.form.getlist('selected_attendants')
+
+        plane_size = get_plane_size(plane_id)  # Uses the new function in utils.py
+
+        if not plane_size:
+            flash("Error: Selected plane not found.")
+            return redirect(url_for('schedule_flight'))
+
+        # Define Rules
+        req_pilots = 3 if plane_size == 'Big' else 2
+        req_attendants = 6 if plane_size == 'Big' else 3
+
+        # Check Counts
+        if len(pilot_ids) != req_pilots:
+            flash(
+                f"Crew Error: A {plane_size} plane requires exactly {req_pilots} pilots. You selected {len(pilot_ids)}.")
+            return redirect(url_for('schedule_flight'))
+
+        if len(attendant_ids) != req_attendants:
+            flash(
+                f"Crew Error: A {plane_size} plane requires exactly {req_attendants} attendants. You selected {len(attendant_ids)}.")
+            return redirect(url_for('schedule_flight'))
 
         # 2. Create Flight Object
         new_flight = Flight(

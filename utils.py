@@ -1373,6 +1373,28 @@ def cancel_flight_by_system(flight_id):
     finally:
         if conn: conn.close()
 
+def get_plane_size(plane_id):
+    """
+    Fetches the size ('Big' or 'Small') of a specific plane by ID.
+    """
+    conn = None
+    cursor = None
+    size = None
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        query = "SELECT size FROM Planes WHERE plane_id = %s"
+        cursor.execute(query, (plane_id,))
+        result = cursor.fetchone()
+        if result:
+            size = result[0]
+    except mysql.connector.Error as err:
+        print(f"Error fetching plane size: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+    return size
+
 
 
 

@@ -135,21 +135,21 @@
                     <div class="form-group">
                         <label>Select Plane <span style="color:red">*</span></label>
                         <select id="plane-select" name="selected_plane" class="modern-select" required>
-                            </select>
+                        </select>
                     </div>
 
                     <div style="display:flex; gap:15px; margin-top:15px;">
                         <div style="flex:1;">
                             <label>Select Pilots (<span id="pilot-count-req">0</span> required)</label>
                             <select id="pilot-select" name="selected_pilots" class="modern-select" multiple required style="height: 120px;">
-                                </select>
+                            </select>
                             <small style="color: #666; font-size: 0.8em;">Hold Ctrl (Win) or Cmd (Mac) to select multiple.</small>
                         </div>
 
                         <div style="flex:1;">
                             <label>Select Attendants (<span id="attendant-count-req">0</span> required)</label>
                             <select id="attendant-select" name="selected_attendants" class="modern-select" multiple required style="height: 120px;">
-                                </select>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -164,6 +164,7 @@
 <script>
     let allLines = [];
     let currentDuration = "";
+    let currentPlaneSize = ""; // Stores 'Big' or 'Small' for validation
 
     window.onload = function() {
         fetch('/api/schedule-data', {
@@ -175,8 +176,6 @@
         .then(data => {
             if (data.error) { alert(data.error); return; }
             allLines = data;
-
-            // Only populate Source Countries initially
             populateSourceCountries();
         })
         .catch(err => console.error(err));
@@ -198,7 +197,7 @@
 
         fillSelect('src_city', cities);
         fillSelect('src_airport', []);
-        resetDestination(); // Reset destination because source changed
+        resetDestination();
     }
 
     function filterAirports(side) {
@@ -213,8 +212,7 @@
         resetDestination();
     }
 
-    // --- 3. TRIGGER DESTINATION OPTIONS (The Fix) ---
-    // This runs when a Source Airport is selected
+    // --- 3. TRIGGER DESTINATION OPTIONS ---
     function updateDestOptions() {
         let sAirport = document.getElementById('src_airport').value;
 
@@ -223,16 +221,12 @@
             return;
         }
 
-        console.log("Source Selected:", sAirport, "- Filtering Destinations...");
-
         // Filter lines to ONLY those starting from the selected airport
         let validRoutes = allLines.filter(l => l.src_airport === sAirport);
 
-        // Populate Destination Country based on valid routes
         let dstCountries = [...new Set(validRoutes.map(l => l.dst_country))];
         fillSelect('dst_country', dstCountries);
 
-        // Clear subsequent dest fields
         fillSelect('dst_city', []);
         fillSelect('dst_airport', []);
     }
@@ -242,7 +236,6 @@
         let sAirport = document.getElementById('src_airport').value;
         let dCountry = document.getElementById('dst_country').value;
 
-        // Filter: Lines from Source Airport AND to Dest Country
         let relevant = allLines.filter(l => l.src_airport === sAirport && l.dst_country === dCountry);
         let cities = [...new Set(relevant.map(l => l.dst_city))];
 
@@ -255,7 +248,6 @@
         let dCountry = document.getElementById('dst_country').value;
         let dCity = document.getElementById('dst_city').value;
 
-        // Filter: Lines from Source Airport AND to Dest City
         let relevant = allLines.filter(l =>
             l.src_airport === sAirport &&
             l.dst_country === dCountry &&
@@ -298,7 +290,6 @@
                 document.getElementById('step-time').classList.remove('hidden');
                 document.getElementById('display-duration').innerText = currentDuration;
 
-                // If the user already filled date/time, verify landing
                 if(document.getElementById('dept_date').value && document.getElementById('dept_time').value) {
                      calculateLanding();
                 }
@@ -339,8 +330,6 @@
 
         if (!sCountry || !dDate || !dTime) return;
 
-        console.log("Fetching resources...");
-
         fetch('/api/schedule-data', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -369,26 +358,37 @@
 
         let pSelect = document.getElementById('plane-select');
         pSelect.innerHTML = '<option value="">Select Plane...</option>';
+
         if (!data.planes || data.planes.length === 0) {
             let opt = document.createElement('option');
             opt.disabled = true;
-            opt.innerHTML = "No suitable planes available in " + document.getElementById('src_country').value;
+            opt.innerHTML = "No suitable planes available";
             pSelect.appendChild(opt);
         } else {
             data.planes.forEach(p => {
                 let opt = document.createElement('option');
                 opt.value = p[0];
+                // IMPORTANT: We store the plane size in dataset to access it later for validation
+                opt.dataset.size = p[2];
                 opt.innerHTML = `${p[1]} (ID: ${p[0]}) - ${p[2]}`;
                 pSelect.appendChild(opt);
             });
         }
 
-        // Update Pilot/Attendant count based on plane size selection
+        // Logic to update requirements text when plane selection changes
         pSelect.onchange = function() {
             if(this.selectedIndex > 0) {
-                let isBig = this.options[this.selectedIndex].text.includes('Big');
+                let selectedOpt = this.options[this.selectedIndex];
+                let size = selectedOpt.dataset.size;
+                currentPlaneSize = size; // Store globally
+
+                let isBig = (size === 'Big');
                 document.getElementById('pilot-count-req').innerText = isBig ? 3 : 2;
                 document.getElementById('attendant-count-req').innerText = isBig ? 6 : 3;
+            } else {
+                currentPlaneSize = "";
+                document.getElementById('pilot-count-req').innerText = "0";
+                document.getElementById('attendant-count-req').innerText = "0";
             }
         };
 
@@ -414,6 +414,38 @@
             s.appendChild(opt);
         });
     }
+
+    // --- FORM VALIDATION ---
+    document.getElementById('scheduleForm').onsubmit = function(e) {
+        if (!currentPlaneSize) {
+            // Should be caught by 'required' attribute, but just in case
+            return true;
+        }
+
+        let isBig = (currentPlaneSize === 'Big');
+        let reqPilots = isBig ? 3 : 2;
+        let reqAttendants = isBig ? 6 : 3;
+
+        // Count selected options
+        let selectedPilots = document.getElementById('pilot-select').selectedOptions.length;
+        let selectedAttendants = document.getElementById('attendant-select').selectedOptions.length;
+
+        // Validate Pilots
+        if (selectedPilots !== reqPilots) {
+            alert(`Crew Requirement Error:\nFor a ${currentPlaneSize} plane, you must select exactly ${reqPilots} pilots.\nYou selected ${selectedPilots}.`);
+            e.preventDefault();
+            return false;
+        }
+
+        // Validate Attendants
+        if (selectedAttendants !== reqAttendants) {
+            alert(`Crew Requirement Error:\nFor a ${currentPlaneSize} plane, you must select exactly ${reqAttendants} attendants.\nYou selected ${selectedAttendants}.`);
+            e.preventDefault();
+            return false;
+        }
+
+        return true;
+    };
 </script>
 
 </body>
