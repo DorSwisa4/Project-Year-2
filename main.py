@@ -172,6 +172,7 @@ def search_results():
 
 @app.route('/api/get-options')
 def get_options():
+    """This API endpoint returns a JSON list of unique countries, cities, or airports filtered by type, parent location, and side parameters."""
     request_type = request.args.get('type')
     parent_val = request.args.get('parent_val')
     location_side = request.args.get('side')
@@ -192,6 +193,9 @@ def get_options():
 
 @app.route('/order/<flight_id>', methods=['GET', 'POST'])
 def order_page(flight_id):
+    """This function manages the flight booking process by rendering the
+     order form and validating passenger data prior to seat selection."""
+
     if session.get('is_manager'):
         return redirect(url_for('manager_dashboard'))
 
@@ -237,6 +241,7 @@ def order_page(flight_id):
 
 @app.route('/seat-selection', methods=['GET', 'POST'])
 def seat_selection():
+    """This endpoint renders the flight's available seat map and validates the user's selection against their ticket count before proceeding to payment."""
     if 'temp_booking' not in session:
         return redirect(url_for('home'))
 
@@ -256,7 +261,7 @@ def seat_selection():
         flight_id = booking['flight_id']
 
         # 1. Get Plane Layout
-        plane_layout = get_plane_layout(flight_id)  # Your existing function
+        plane_layout = get_plane_layout(flight_id)
 
         # 2. Get Occupied Seats (USING THE FIXED FUNCTION)
         occupied_seats = get_occupied_seats(flight_id)
@@ -284,6 +289,7 @@ def seat_selection():
 
 @app.route('/payment', methods=['GET', 'POST'])
 def payment_page():
+    """calculates the total price for the payment view and processes the transaction by creating permanent database records for the order and associated tickets."""
     if 'temp_booking' not in session:
         return redirect(url_for('home'))
 
@@ -294,6 +300,7 @@ def payment_page():
     flight_id = booking_data['flight_id']
     flight = get_flight_details(flight_id)
 
+    #calculating total order price
     total_price = (int(booking_data['tickets_economy']) * flight['price_economy']) + \
                   (int(booking_data['tickets_business']) * flight['price_business'])
 
@@ -319,6 +326,7 @@ def payment_page():
                 booking_data['phones']
             )
 
+        #creating an order and adding it to the SQL
         new_order = Order(
             order_code=None,
             total_cost=total_price,
@@ -335,6 +343,7 @@ def payment_page():
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
 
+        #starting the process of creating the tickets and presenting only avilable seats
         try:
             for seat_code in booking_data['selected_seats']:
                 parts = seat_code.split('-')
@@ -392,6 +401,7 @@ def payment_page():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    """handles new user registration by validating the input, creating a customer record in the database, and automatically logging the user in upon success."""
     if session.get('is_manager'):
         return redirect(url_for('manager_dashboard'))
 
@@ -430,6 +440,7 @@ def signup():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """This function authenticates users by verifying their credentials and establishes a session upon success, or renders the login interface otherwise."""
     if session.get('is_manager'):
         session.clear()
         return redirect(url_for('login'))
@@ -454,6 +465,7 @@ def login():
 
 @app.route('/manager_login', methods = ['GET', 'POST'])
 def manager_login():
+    """This function authenticates manager credentials and establishes a privileged session to grant access to the administrative dashboard."""
     if request.method == 'GET':
         return render_template('manager_login.html')
 
@@ -477,6 +489,7 @@ def manager_login():
 
 @app.route('/manager-dashboard', methods=['GET', 'POST'])
 def manager_dashboard():
+    """This function restricts access to authorized managers and renders the dashboard template populated with flight history data."""
     if not session.get('is_manager'):
         flash("Access Denied. Managers only.")
         return redirect(url_for('manager_login'))
@@ -491,6 +504,8 @@ def manager_dashboard():
 
 @app.route('/manager-dashboard/add-employee', methods=['GET', 'POST'])
 def add_employee():
+    """This function enables authenticated managers to register new
+    employees by collecting their details and role to create and save the corresponding record in the database."""
     if not session.get('is_manager'):
         flash("Access Denied. Managers only.")
         return redirect(url_for('manager_login'))
@@ -530,6 +545,8 @@ def add_employee():
 
 @app.route('/manager-dashboard/add-plane', methods=['GET', 'POST'])
 def add_plane():
+    """This function allows authorized managers to add a new aircraft to the fleet,
+     automatically generating the corresponding seating configuration based on the plane's size."""
     if not session.get('is_manager'):
         flash("Access Denied. Managers only.")
         return redirect(url_for('manager_login'))
@@ -559,6 +576,9 @@ def add_plane():
 
 @app.route('/manager-dashboard/add-operating-line', methods=['GET', 'POST'])
 def new_operating_line():
+    """
+    This function enables managers to define a new flight route by automatically creating and saving both the outbound and return operating lines in the database.
+    """
     if not session.get('is_manager'):
         flash("Access Denied. Managers only.")
         return redirect(url_for('manager_login'))
@@ -603,6 +623,10 @@ def new_operating_line():
 
 @app.route('/api/schedule-data', methods=['POST'])
 def api_schedule_data():
+    """
+    This API endpoint retrieves either operating lines or available flight resources depending on the specified action and scheduling parameters provided in the request.
+    """
+
     try:
         request_data = request.json
         action = request_data.get('action')
@@ -648,6 +672,10 @@ def api_schedule_data():
 
 @app.route('/manager-dashboard/schedule-flight', methods=['GET', 'POST'])
 def schedule_flight():
+    """
+    This function processes the scheduling of a new flight by validating the departure time, creating the flight record, and assigning the selected crew members.
+    """
+
     if not session.get('is_manager'):
         flash("Access Denied.")
         return redirect(url_for('manager_login'))
@@ -710,6 +738,10 @@ def schedule_flight():
 
 @app.route('/manager-dashboard/report/load-factor')
 def report_load_factor():
+    """
+    This endpoint generates a load factor report for authorized managers by retrieving and displaying flight occupancy statistics.
+    """
+
     if not session.get('is_manager'):
         flash("Access Denied. Managers only.")
         return redirect(url_for('manager_login'))
@@ -719,6 +751,9 @@ def report_load_factor():
 
 @app.route('/manager-dashboard/report/revenue')
 def report_revenue():
+    """
+    This endpoint calculates and visualizes monthly revenue data for the manager dashboard to track financial performance.
+    """
     if not session.get('is_manager'):
         flash("Access Denied. Managers only.")
         return redirect(url_for('manager_login'))
@@ -732,6 +767,10 @@ def report_revenue():
 
 @app.route('/manager-dashboard/report/popular-routes')
 def report_popular_routes():
+    """
+    This endpoint retrieves and visualizes statistics on the most frequently booked destinations to identify popular travel routes for the manager dashboard.
+    """
+
     if not session.get('is_manager'):
         flash("Access Denied. Managers only.")
         return redirect(url_for('manager_login'))
@@ -745,6 +784,9 @@ def report_popular_routes():
 
 @app.route('/manager-dashboard/report/cancellations')
 def report_cancellations():
+    """
+    This endpoint aggregates and displays order status metrics, including cancellations and completions, to monitor booking health on the manager dashboard.
+    """
     if not session.get('is_manager'):
         flash("Access Denied. Managers only.")
         return redirect(url_for('manager_login'))
@@ -764,6 +806,10 @@ def report_cancellations():
 
 @app.route('/manager/ask-cancel-flight/<int:flight_id>')
 def manager_ask_cancel_flight(flight_id):
+    """
+    This endpoint verifies if a flight can be cancelled based on the 72-hour restriction and renders a confirmation page for the manager.
+    """
+
     if not session.get('is_manager'):
         flash("Access Denied. Managers only.")
         return redirect(url_for('manager_login'))
@@ -787,6 +833,9 @@ def manager_ask_cancel_flight(flight_id):
 
 @app.route('/manager/perform-cancel-flight/<int:flight_id>', methods=['POST'])
 def manager_perform_cancel_flight(flight_id):
+    """
+    This endpoint executes the flight cancellation after re-validating the 72-hour rule and triggers the necessary system updates and refunds.
+    """
     if not session.get('is_manager'):
         return redirect(url_for('home'))
 
@@ -811,9 +860,12 @@ def manager_perform_cancel_flight(flight_id):
     return redirect(url_for('manager_dashboard'))
 
 
-# --- LOGOUT ROUTE (Crucial!) ---
 @app.route('/logout')
 def logout():
+    """
+    This function logs the current user or manager out by clearing the session data and redirecting them to the home page.
+    """
+
     session.clear()
     return redirect(url_for('home'))
 
@@ -822,6 +874,10 @@ def logout():
 
 @app.errorhandler(404)
 def error(e):
+    """
+    This error handler intercepts 404 'Page Not Found' errors and automatically redirects the user back to the home page.
+    """
+
     return redirect(url_for('home'))
 
 

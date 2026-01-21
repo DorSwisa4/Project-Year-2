@@ -7,7 +7,7 @@ import re
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': 'root',  # Your password
+    'password': 'root',
     'database': 'airlinedb'
 }
 
@@ -193,6 +193,9 @@ def add_to_sql(obj):
 
 
 def check_login(email, password):
+    """
+    This function authenticates a registered customer by verifying their email and password against the database records.
+    """
     conn = None
     cursor = None
 
@@ -255,6 +258,9 @@ def is_signup_valid(customer):
     return True, ""
 
 def get_flights(criteria=None):
+    """
+    This function retrieves a list of active flights from the database that match specific search criteria such as location, date, or flight ID.
+    """
     if criteria is None:
         criteria = {}
 
@@ -327,11 +333,7 @@ def get_flights(criteria=None):
 
 def get_unique_locations(column, filter_col=None, filter_val=None, location_type='source'):
     """
-    שולפת ערכים ייחודיים (מדינות/ערים/שדות) מטבלת קווי התפעול.
-    column: העמודה המבוקשת (למשל 'city')
-    filter_col: העמודה שלפיה מסננים (למשל 'country')
-    filter_val: הערך לסינון (למשל 'Israel')
-    location_type: 'source' (מוצא) או 'dest' (יעד)
+    This function fetches a list of unique locations (countries, cities, or airports) from the operating lines table to populate frontend dropdown menus.
     """
     conn = None
     cursor = None
@@ -395,6 +397,9 @@ def check_manager_login(id_num, password):
 
 
 def get_flight_details(flight_id):
+    """
+    This function retrieves detailed information for a specific flight, including dynamic price calculations based on the aircraft's size and class configuration.
+    """
     conn = None
     cursor = None
     flight = None
@@ -444,6 +449,9 @@ def get_flight_details(flight_id):
 
 
 def get_user_details(email):
+    """
+    This function fetches the personal details and associated phone numbers of a registered customer based on their email address.
+    """
     conn = None
     cursor = None
     user_data = None
@@ -763,6 +771,9 @@ def get_order_status_stats():
     return results
 
 def assign_crew_to_flight(flight_id, pilot_ids, attendant_ids):
+    """
+    This function assigns selected pilots and flight attendants to a specific flight by creating records in the respective junction tables.
+    """
     conn = None
     try:
         conn = mysql.connector.connect(**db_config)
@@ -988,7 +999,9 @@ def cancel_order_by_user(order_code):
         if conn: conn.close()
 
 def get_plane_layout(plane_id):
-
+    """
+    This function retrieves the seating configuration of a specific aircraft, detailing the number of rows and columns for each class.
+    """
     conn = None
     cursor = None
     layout = []
@@ -1014,7 +1027,9 @@ def get_plane_layout(plane_id):
 
 
 def get_occupied_seats(flight_id):
-
+    """
+    This function fetches a set of all occupied seat coordinates for a specific flight to ensure accurate availability display.
+    """
     conn = None
     cursor = None
     occupied = set()
@@ -1044,6 +1059,9 @@ def get_occupied_seats(flight_id):
 
 
 def is_email_registered(email):
+    """
+    This function checks the database to determine if a specific email address is already associated with a registered customer account.
+    """
     conn = None
     cursor = None
     exists = False
@@ -1062,17 +1080,18 @@ def is_email_registered(email):
 
 
 def ensure_guest_exists(email, first_name, last_name, phones):
-
+    """
+    This function verifies if a guest record exists for an email and creates one along with associated phone numbers if necessary.
+    """
     conn = None
     cursor = None
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
 
-        # 1. בדיקה אם קיים
         cursor.execute("SELECT email FROM GuestCustomers WHERE email = %s", (email,))
         if not cursor.fetchone():
-            # הוספה לטבלת אורחים
+
             cursor.execute(
                 "INSERT INTO GuestCustomers (email, first_name_en, last_name_en) VALUES (%s, %s, %s)",
                 (email, first_name, last_name)
@@ -1096,15 +1115,16 @@ def ensure_guest_exists(email, first_name, last_name, phones):
 
 
 def check_and_update_flight_status(flight_id):
-
+    """
+    This function updates the flight status to 'Full' if the number of sold tickets equals the total seating capacity of the aircraft.
+    """
     conn = None
     cursor = None
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
 
-        # 1. כמה מושבים יש סך הכל במטוס של הטיסה הזו?
-        # אנו צריכים את ה-plane_id מתוך הטיסה, ואז לסכום את ה-total_seats מ-Classes
+
         query_total = """
             SELECT SUM(C.total_seats) 
             FROM Classes C
@@ -1129,8 +1149,6 @@ def check_and_update_flight_status(flight_id):
         if cursor: cursor.close()
         if conn: conn.close()
 
-
-# Add this to utils.py
 
 def get_guest_order(order_code, email):
     """
@@ -1250,9 +1268,6 @@ def get_order_details_for_cancel(order_code):
         if conn: conn.close()
 
     return order
-
-
-# --- Add to utils.py ---
 
 def get_flight_details_for_manager(flight_id):
     """
