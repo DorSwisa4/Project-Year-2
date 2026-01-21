@@ -20,6 +20,7 @@
         <div class="nav-links">
 
         <div class="nav-links">
+            <a href="{{ url_for('about_us') }}">About Us</a>
             {% if 'user_name' in session %}
                 <span style="color: #00a8e8; margin-left: 20px; font-weight: bold;">
                     Hello, {{ session['user_name'] }}

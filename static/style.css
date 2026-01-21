@@ -287,7 +287,7 @@ body {
     /* Force full height, disable page scroll */
     height: 100vh;
     width: 100vw;
-    overflow: hidden;
+    overflow-y: auto;
 
     /* Center the content */
     display: flex;
@@ -1954,3 +1954,200 @@ select[multiple] option:checked {
     transition: background 0.2s;
 }
 .btn-no:hover { background-color: #d5d5d5; }
+
+
+/* =========================================
+   ABOUT US PAGE STYLES
+   ========================================= */
+
+.about-page-body {
+    background-color: #f0f2f5;
+}
+
+.about-header {
+    /* You can use a generic sky image here or a solid color gradient */
+    background-image: linear-gradient(135deg, #02122c 0%, #00a8e8 100%);
+    height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    margin-top: 60px; /* Offset for navbar */
+}
+
+.header-overlay h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.subtitle {
+    font-size: 1.3rem;
+    font-weight: 300;
+    opacity: 0.9;
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+.about-container {
+    max-width: 1100px;
+    margin: -80px auto 50px; /* Pulls container up over the header */
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+    padding: 60px;
+    position: relative;
+    overflow: hidden;
+}
+
+.about-section {
+    display: flex;
+    align-items: center;
+    gap: 60px;
+    margin-bottom: 60px;
+}
+
+.about-section.reverse {
+    flex-direction: row-reverse;
+}
+
+.content-text {
+    flex: 1;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #444;
+}
+
+.content-text h2 {
+    color: #02122c;
+    font-size: 2rem;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.content-text h2 i {
+    color: #00a8e8;
+}
+
+.content-text strong {
+    color: #00a8e8;
+}
+
+.content-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.content-image img {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    transition: transform 0.3s;
+    object-fit: cover;
+}
+
+.content-image img:hover {
+    transform: scale(1.02);
+}
+
+/* Specific styling for the vertical handshake image */
+.vertical-img-container img.vertical-img {
+    max-width: 300px; /* Limits width so it doesn't take up too much vertical space */
+    width: 100%;
+    height: auto;
+}
+
+.section-divider {
+    border: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #e1e8ed, transparent);
+    margin: 60px 0;
+}
+
+/* Partners Section */
+.partners-section {
+    margin-top: 40px;
+}
+
+.partners-grid {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.partner-card {
+    flex: 1;
+    min-width: 280px;
+    background: #f8fbff;
+    padding: 40px 30px;
+    border-radius: 16px;
+    text-align: center;
+    border: 1px solid #e1e8ed;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.partner-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0, 168, 232, 0.15);
+    border-color: #00a8e8;
+}
+
+.card-icon-circle {
+    width: 70px;
+    height: 70px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    font-size: 1.8rem;
+    color: #00a8e8;
+}
+
+.partner-card h3 {
+    margin-bottom: 15px;
+    color: #02122c;
+    font-size: 1.4rem;
+}
+
+.partner-link {
+    display: inline-block;
+    margin-top: 25px;
+    color: #00a8e8;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.partner-link:hover {
+    color: #02122c;
+}
+
+@media (max-width: 768px) {
+    .about-section, .about-section.reverse {
+        flex-direction: column;
+        text-align: center;
+        gap: 30px;
+    }
+
+    .content-text h2 {
+        justify-content: center;
+    }
+
+    .about-container {
+        padding: 30px;
+        margin-top: -40px;
+    }
+}

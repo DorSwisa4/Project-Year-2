@@ -149,12 +149,19 @@ def add_to_sql(obj):
                           obj.dst_city, obj.dst_airport, obj.departure_time, obj.landing_time, obj.status, price)
 
             elif isinstance(obj, Order):
-                sql = """INSERT INTO Orders (order_code, total_cost, status, guest_email, registered_email)
-                         VALUES (%s, %s, %s, %s, %s)"""
+                sql = """INSERT INTO Orders (order_code, total_cost, status, guest_email, registered_email, creation_date)
+                
+                                     VALUES (%s, %s, %s, %s, %s, %s)"""
+
                 # Handle empty strings or None for emails
+
                 g_email = obj.guest_email.strip() if obj.guest_email else None
+
                 r_email = obj.registered_email.strip() if obj.registered_email else None
-                values = (obj.order_code, obj.total_cost, obj.status, g_email, r_email)
+
+                # Add obj.creation_date to the values tuple
+
+                values = (obj.order_code, obj.total_cost, obj.status, g_email, r_email, obj.creation_date)
 
             elif isinstance(obj, Ticket):
                 sql = """INSERT INTO Tickets (ticket_number, flight_id, plane_id, class_type, row_num, col_num, order_code, guest_email, registered_email, price)
@@ -679,9 +686,15 @@ def get_load_factor_stats():
     return results
 
 
-# --- REPORT 2: REVENUE ---
-def get_revenue_stats():
-    """ Returns total revenue grouped by Month. """
+# --- REPORT 2: REVENUE  BY PLANE TYPE---
+def get_revenue_by_plane_type():
+    """
+    Returns revenue breakdown by Manufacturer and Plane Size.
+    Includes logic for:
+    - Completed orders (100%)
+    - Cancelled by Customer (5% penalty fee)
+    - Active orders for flights departing in < 36 hours (assumed committed)
+    """
     conn = None
     cursor = None
     results = []
@@ -689,15 +702,36 @@ def get_revenue_stats():
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
 
-        # Group by Year-Month
         query = """
             SELECT 
-                DATE_FORMAT(f.departure_time, '%Y-%m') as month,
-                SUM(t.price) as total_revenue
-            FROM Tickets t
-            JOIN Flights f ON t.flight_id = f.flight_id
-            GROUP BY month
-            ORDER BY month ASC
+                planes.manufacturer, 
+                planes.size, 
+                SUM(CASE 
+                    WHEN orders.status = 'Completed' AND tickets.class_type = 'Economy' THEN tickets.price
+                    WHEN orders.status = 'CancelledByCustomer' AND tickets.class_type = 'Economy' THEN tickets.price * 0.05
+                    WHEN orders.status = 'Active' 
+                         AND tickets.class_type = 'Economy'
+                         AND flights.departure_time <= NOW() + INTERVAL 36 HOUR 
+                         AND flights.departure_time > NOW() 
+                         THEN tickets.price
+                    ELSE 0 
+                END) AS revenue_from_economy, 
+                SUM(CASE 
+                    WHEN orders.status = 'Completed' AND tickets.class_type = 'Business' THEN tickets.price    
+                    WHEN orders.status = 'CancelledByCustomer' AND tickets.class_type = 'Business' THEN tickets.price * 0.05
+                    WHEN orders.status = 'Active' 
+                         AND tickets.class_type = 'Business'
+                         AND flights.departure_time <= NOW() + INTERVAL 36 HOUR 
+                         AND flights.departure_time > NOW() 
+                         THEN tickets.price
+                    ELSE 0 
+                END) AS revenue_from_business
+            FROM tickets
+            JOIN planes ON tickets.plane_id = planes.plane_id
+            JOIN orders ON tickets.order_code = orders.order_code
+            JOIN flights ON tickets.flight_id = flights.flight_id
+            GROUP BY planes.manufacturer, planes.size
+            ORDER BY planes.manufacturer ASC, planes.size ASC;
         """
         cursor.execute(query)
         results = cursor.fetchall()

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Fly-Tau - Our Story</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="about-page-body">
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <div style="display: flex; align-items: center;">
+                <a href="{{ url_for('home') }}" style="text-decoration: none; display: flex; align-items: center;">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="height: 50px; margin-right: 10px;">
+                    <h2 style="color:white; font-weight:800; margin: 0;">Fly-Tau</h2>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ url_for('about_us') }}" class="active-link">About Us</a>
+                {% if 'user_name' in session %}
+                    <a href="{{ url_for('my_bookings') }}">My Bookings</a>
+                    <a href="{{ url_for('logout') }}" style="color: #ff4d4d;">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <header class="about-header">
+        <div class="header-overlay">
+            <h1>From Campus to Clouds</h1>
+            <p class="subtitle">The story of how a bold idea became a NASDAQ giant.</p>
+        </div>
+    </header>
+
+    <div class="about-container">
+
+        <section class="about-section">
+            <div class="content-text">
+                <h2><i class="fas fa-users"></i> The Dream Team</h2>
+                <p>
+                    <strong>It started with a friendship.</strong> Fly-Tau wasn't founded in a boardroom, but by three visionary friends with a shared passion for aviation. What began as late-night study sessions turned into a mission: to build an airline that puts people first.
+                </p>
+                <p>
+                    Driven by ambition and engineering expertise, our founders set out to prove that air travel could be smarter, friendlier, and more efficient.
+                </p>
+            </div>
+            <div class="content-image">
+                <img src="{{ url_for('static', filename='business3.jpeg') }}" alt="The Founders">
+            </div>
+        </section>
+
+        <hr class="section-divider">
+
+        <section class="about-section reverse">
+            <div class="content-text">
+                <h2><i class="fas fa-plane-departure"></i> Designing the Experience</h2>
+                <p>
+                    <strong>Innovation is in our DNA.</strong> From day one, we focused on curating a fleet that balances luxury with agility.
+                </p>
+                <p>
+                    Our hangar houses the giants of the sky from <strong>Boeing</strong> and <strong>Airbus</strong> for our long-haul routes. For exclusive regional travel, we proudly fly premium <strong>Dassault</strong> jets, ensuring that even our shorter flights define speed and style.
+                </p>
+                <p>
+                    We utilized cutting-edge technology to optimize every route, ensuring punctuality that the industry had never seen before.
+                </p>
+            </div>
+            <div class="content-image">
+                <img src="{{ url_for('static', filename='business2.jpeg') }}" alt="Planning the Fleet">
+            </div>
+        </section>
+
+        <hr class="section-divider">
+
+        <section class="about-section">
+            <div class="content-text">
+                <h2><i class="fas fa-chart-line"></i> The Rise to Fame</h2>
+                <p>
+                    <strong>A Historic Moment.</strong> Our uncompromising commitment to excellence caught the world's attention. The rapid success and unique "passenger-first" digital experience led to our historic public listing on <strong>NASDAQ</strong>.
+                </p>
+                <p>
+                    Ringing the opening bell was not just a celebration of financial success, but a testament to the hard work and trust of millions of passengers who choose Fly-Tau every day.
+                </p>
+            </div>
+            <div class="content-image">
+                <img src="{{ url_for('static', filename='business5.jpeg') }}" alt="NASDAQ IPO Celebration">
+            </div>
+        </section>
+
+        <hr class="section-divider">
+
+        <section class="about-section reverse">
+            <div class="content-text">
+                <h2><i class="fas fa-handshake"></i> Uncompromising Quality</h2>
+                <p>
+                    We believe that a great flight deserves great food. That is why we shake hands only with the best. We have established exclusive partnerships with local producers to ensure every meal served at 30,000 feet is 5-star quality.
+                </p>
+            </div>
+            <div class="content-image vertical-img-container">
+                <img src="{{ url_for('static', filename='business1.jpeg') }}" alt="Partnership Handshake" class="vertical-img">
+            </div>
+        </section>
+
+        <section class="partners-section">
+            <div class="partners-grid">
+                <div class="partner-card">
+                    <div class="card-icon-circle">
+                        <i class="fas fa-carrot"></i>
+                    </div>
+                    <h3>Farm2U</h3>
+                    <p>We partner with <strong>Farm2U</strong> to bring you the finest livestock and crisp, organic vegetables harvested daily.</p>
+                    <a href="{{ url_for('partner_farm2u') }}" class="partner-link">Visit Farm2U <i class="fas fa-arrow-right"></i></a>
+                </div>
+
+                <div class="partner-card">
+                    <div class="card-icon-circle">
+                        <i class="fas fa-cheese"></i>
+                    </div>
+                    <h3>Moshe Dairy</h3>
+                    <p>Our boutique cheese and dairy selection is exclusively sourced from <strong>Moshe Dairy</strong>, delivering rich, local flavors.</p>
+                    <a href="{{ url_for('partner_moshe_dairy') }}" class="partner-link">Visit Moshe Dairy <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <footer style="text-align: center; padding: 20px; color: #666; font-size: 0.9rem; margin-top: 50px;">
+        &copy; 2026 Fly-Tau Airlines. All rights reserved.
+    </footer>
+
+</body>
+</html>

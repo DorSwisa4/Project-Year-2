@@ -260,17 +260,19 @@ def seat_selection():
 
         flight_id = booking['flight_id']
 
-        # 1. Get Plane Layout
-        plane_layout = get_plane_layout(flight_id)
+        flight_details = get_flight_details(flight_id)
+        current_plane_id = flight_details['plane_id']
 
-        # 2. Get Occupied Seats (USING THE FIXED FUNCTION)
+        plane_layout = get_plane_layout(current_plane_id)
+
+        # 3. Get Occupied Seats
         occupied_seats = get_occupied_seats(flight_id)
 
-        # 3. Render Template
+        # 4. Render Template
         return render_template('Seat_selection.html',
                                booking=booking,
                                layout=plane_layout,
-                               occupied_seats=occupied_seats,  # Pass the filtered list
+                               occupied_seats=occupied_seats,
                                col_letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
     if request.method == 'POST':
@@ -332,7 +334,8 @@ def payment_page():
             total_cost=total_price,
             status='Active',
             guest_email=guest_email_val,
-            registered_email=registered_email_val
+            registered_email=registered_email_val,
+            creation_date = datetime.now()
         )
 
         success, msg = add_to_sql(new_order)  # זה יעדכן את new_order.order_code
@@ -749,21 +752,29 @@ def report_load_factor():
     data = get_load_factor_stats()
     return render_template('report_load_factor.html', report_data=data)
 
+
 @app.route('/manager-dashboard/report/revenue')
 def report_revenue():
-    """
-    This endpoint calculates and visualizes monthly revenue data for the manager dashboard to track financial performance.
-    """
+    """ This function will present to the manager a report of revenue by Plane """
     if not session.get('is_manager'):
-        flash("Access Denied. Managers only.")
         return redirect(url_for('manager_login'))
 
-    data = get_revenue_stats()
+    data = get_revenue_by_plane_type()
 
-    labels = [row['month'] for row in data]
-    values = [float(row['total_revenue']) for row in data]
+    # Process data for Chart.js
+    # Label Format: "Boeing - Big", "Airbus - Small"
+    labels = [f"{row['manufacturer']} ({row['size']})" for row in data]
 
-    return render_template('report_revenue.html', labels=labels, values=values)
+    # Two datasets: One for Economy, One for Business
+    economy_revenue = [float(row['revenue_from_economy']) for row in data]
+    business_revenue = [float(row['revenue_from_business']) for row in data]
+
+    return render_template(
+        'report_revenue.html',
+        labels=labels,
+        economy=economy_revenue,
+        business=business_revenue
+    )
 
 @app.route('/manager-dashboard/report/popular-routes')
 def report_popular_routes():
@@ -868,6 +879,21 @@ def logout():
 
     session.clear()
     return redirect(url_for('home'))
+
+@app.route('/about-us')
+def about_us():
+    """Renders the About Us page telling the company story."""
+    return render_template('about_us.html')
+
+@app.route('/partner/farm2u')
+def partner_farm2u():
+    """Renders the Farm2U partner page."""
+    return render_template('farm2u.html')
+
+@app.route('/partner/moshe-dairy')
+def partner_moshe_dairy():
+    """Renders the Moshe Dairy partner page."""
+    return render_template('moshe_dairy.html')
 
 
 
