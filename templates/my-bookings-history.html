@@ -6,6 +6,21 @@
     <title>Fly-Tau - My Bookings</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Small styling for the seat/flight badges */
+        .info-pill {
+            display: inline-block;
+            background: #f0f2f5;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #555;
+            margin-right: 10px;
+            margin-top: 5px;
+            border: 1px solid #e1e4e8;
+        }
+        .info-pill i { color: #00a8e8; margin-right: 5px; }
+    </style>
 </head>
 <body class="dashboard-body">
 
@@ -35,20 +50,32 @@
 
         <h3 class="section-title">My Booking History</h3>
 
-        <div class="filter-bar">
-            <i class="fas fa-filter icon-blue"></i>
-            <span class="filter-label">Filter Orders:</span>
+        <div class="filter-bar" style="justify-content: space-between;">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <i class="fas fa-filter icon-blue"></i>
+                <span class="filter-label">Filter:</span>
+                <select id="statusFilter" class="modern-select filter-select" onchange="applyFilters()">
+                    <option value="all">All Statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Completed">Completed</option>
+                    <option value="CancelledByCustomer">Cancelled by Me</option>
+                    <option value="CancelledBySystem">Cancelled by Airline</option>
+                </select>
+            </div>
 
-            <select id="statusFilter" class="modern-select filter-select" onchange="filterOrders()">
-                <option value="all">All Statuses</option>
-                <option value="Active">Active</option>
-                <option value="Completed">Completed</option>
-                <option value="CancelledByCustomer">Cancelled by Me</option>
-                <option value="CancelledBySystem">Cancelled by Airline</option>
-            </select>
+            <div style="display:flex; align-items:center; gap:15px;">
+                <i class="fas fa-sort-amount-down icon-blue"></i>
+                <span class="filter-label">Sort By:</span>
+                <select id="sortFilter" class="modern-select filter-select" onchange="applyFilters()">
+                    <option value="newest_order">Order Code (Newest)</option>
+                    <option value="oldest_order">Order Code (Oldest)</option>
+                    <option value="date_soon">Departure (Sooner)</option>
+                    <option value="date_far">Departure (Later)</option>
+                </select>
+            </div>
         </div>
 
-        <div class="scrollable-flights">
+        <div class="scrollable-flights" id="ordersContainer">
 
             {% if not orders %}
                 <div class="no-bookings-msg">
@@ -58,9 +85,10 @@
             {% endif %}
 
             {% for order in orders %}
-            <div class="flight-card order-row" data-status="{{ order.order_status }}">
-
-                <div class="flight-info">
+            <div class="flight-card order-row"
+                 data-status="{{ order.order_status }}"
+                 data-order-code="{{ order.order_code }}"
+                 data-timestamp="{{ order.departure_time }}"> <div class="flight-info">
                     <div class="flight-header">
                         <span class="order-id-badge">Order #{{ order.order_code }}</span>
                         <span class="time-badge">
@@ -74,8 +102,13 @@
                         {{ order.dst_city }}
                     </h3>
 
-                    <div class="ticket-count">
-                        <i class="fas fa-ticket-alt"></i> Tickets: <strong>{{ order.ticket_count }}</strong>
+                    <div style="margin-top: 8px;">
+                        <span class="info-pill">
+                            <i class="fas fa-plane"></i> Flight #{{ order.flight_id }}
+                        </span>
+                        <span class="info-pill" title="Seats">
+                            <i class="fas fa-chair"></i> {{ order.seat_numbers }}
+                        </span>
                     </div>
                 </div>
 
@@ -113,19 +146,45 @@
     </div>
 
     <script>
-        function filterOrders() {
-            const filterValue = document.getElementById('statusFilter').value;
-            const rows = document.querySelectorAll('.order-row');
+        function applyFilters() {
+            const container = document.getElementById('ordersContainer');
+            const rows = Array.from(document.querySelectorAll('.order-row'));
 
+            // 1. FILTERING
+            const filterValue = document.getElementById('statusFilter').value;
             rows.forEach(row => {
                 const status = row.getAttribute('data-status');
-
                 if (filterValue === 'all' || status === filterValue) {
                     row.style.display = 'flex';
                 } else {
                     row.style.display = 'none';
                 }
             });
+
+            // 2. SORTING
+            const sortValue = document.getElementById('sortFilter').value;
+
+            rows.sort((a, b) => {
+                const orderA = parseInt(a.getAttribute('data-order-code'));
+                const orderB = parseInt(b.getAttribute('data-order-code'));
+
+                // Convert timestamps (Python string format) to JS Date objects
+                const dateA = new Date(a.getAttribute('data-timestamp'));
+                const dateB = new Date(b.getAttribute('data-timestamp'));
+
+                if (sortValue === 'newest_order') {
+                    return orderB - orderA; // Descending
+                } else if (sortValue === 'oldest_order') {
+                    return orderA - orderB; // Ascending
+                } else if (sortValue === 'date_soon') {
+                    return dateA - dateB; // Ascending
+                } else if (sortValue === 'date_far') {
+                    return dateB - dateA; // Descending
+                }
+            });
+
+            // Re-append sorted rows
+            rows.forEach(row => container.appendChild(row));
         }
     </script>
 </body>

@@ -253,10 +253,59 @@ body {
                       url('new-plane background.png');
     background-position: top center;
 }
+
 .bg-add-Line {
     background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
                       url('add-line background.png');
     background-position: top center;
+}
+
+.bg-cancel {
+    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+                      url('warning picture.png');
+    background-position: top center;
+}
+
+.bg-find-booking {
+    background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),
+                      url('find my booking background.png');
+    background-position: top center;
+    background-size: cover;
+    background-attachment: fixed;
+}
+
+/* 1. The Background: Fixed to screen size */
+.bg-schedule {
+    /* You can change the image filename to whatever you prefer */
+    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
+                      url('schedule-flight background.jpg');
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    /* Force full height, disable page scroll */
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+
+    /* Center the content */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 2. The White Box: Scrollable internally */
+.schedule-box {
+    width: 100%;
+    max-width: 800px; /* Keep it wide enough for the form */
+
+    max-height: 85vh;
+    overflow-y: auto;
+
+    margin: 0;
+
+    scroll-behavior: smooth;
 }
 
 .registration-container {
@@ -480,8 +529,8 @@ label.required::after {
    7. BOOKING PAGE
    ========================================= */
 .booking-page-body {
-    background-image: linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.8)),
-                      url('../static/booking-background.png');
+    background-image: linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3)),
+                      url('../static/booking background.png');
     background-size: cover;
     background-position: center;
     height: 100vh;
@@ -782,16 +831,6 @@ select[multiple] option:checked {
 
 .info-box i {
     font-size: 1.2rem;
-}
-
-/* 6. Background wrapper specific to schedule page */
-.bg-schedule {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 40px 20px;
 }
 
 /* 7. Badges for Long/Short Flight */
@@ -1411,13 +1450,22 @@ select[multiple] option:checked {
 .confirm-box {
     background: white;
     max-width: 500px;
-    margin: 50px auto;
+    width: 90%; /* responsive width */
+
+    /* Change margin to 0 because .bg-cancel now handles centering */
+    margin: 0;
+
     padding: 40px;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.1);
     text-align: center;
     border-top: 5px solid #d32f2f;
+
+    /* Optional: Move it down slightly if it feels too high */
+    position: relative;
+    top: 20px;
 }
+
 .warning-icon { font-size: 3rem; color: #d32f2f; margin-bottom: 20px; }
 .confirm-text { color: #666; margin-bottom: 20px; }
 .flight-route-large {

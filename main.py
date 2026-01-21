@@ -1,25 +1,41 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
-from datetime import date
+from datetime import date, datetime, timedelta
 from classes import *
 from utils import *
 import mysql.connector
 
 app = Flask(__name__)
 
+
+@app.before_request
+def make_session_permanent():
+    """this function ends the user session if he disconnected or idle for more than an hour"""
+    session.permanent = False
+
+    app.permanent_session_lifetime = timedelta(minutes=60)
+
+    if 'user_email' in session or 'is_manager' in session:
+        now = datetime.now().timestamp()
+        last_active = session.get('last_active')
+
+        if last_active:
+            diff = now - last_active
+            if diff > 3600:
+                session.clear()
+                flash("You have been logged out due to inactivity (1 hour).")
+                return redirect(url_for('login'))
+
+        session['last_active'] = now
+
 app.secret_key = 'SwisBoy'
 
-# --- 1. Database Configuration ---
-# Update these details to match your MySQL Workbench setup
 db_config = {
-    'user': 'root',  # Your MySQL username
-    'password': 'root',  # Your MySQL password
+    'user': 'root',
+    'password': 'root',
     'host': 'localhost',
     'database': 'AirlineDB'
 }
 
-
-# --- 2. The Home Route ---
-# This serves your HTML page when you open the site
 @app.route('/')
 def home():
     if session.get('is_manager'):
@@ -29,14 +45,11 @@ def home():
         return render_template('home_page.html', flights=all_flights)
 
 
-# Add this to main.py
-
 @app.route('/my-bookings')
 def my_bookings():
     """
     Displays the booking history for a logged-in registered customer.
     """
-    # 1. Security Check
     if 'user_email' not in session:
         flash("Please login to view your bookings.")
         return redirect(url_for('login'))
@@ -56,9 +69,11 @@ def find_my_booking_page():
     """
     Allows a guest to find their order using Order Code and Email.
     """
-    # If user is logged in, redirect them to their own history page
     if 'user_email' in session:
         return redirect(url_for('my_bookings'))
+
+    if session.get('is_manager'):
+        return redirect(url_for('manager_dashboard'))
 
     if request.method == 'GET':
         return render_template('find-my-booking.html')
@@ -67,7 +82,6 @@ def find_my_booking_page():
         order_code = request.form.get('order_code')
         email = request.form.get('email')
 
-        # Search for the order
         order = get_guest_order(order_code, email)
 
         if order:
@@ -127,6 +141,11 @@ def perform_cancel(order_code):
 
 @app.route('/search', methods=['POST'])
 def search_results():
+    """
+        Processes the flight search that the user inputs in the homepage
+         It collects user input, filters the database, and re-renders the home page with results.
+    """
+
     search_params = {
         'flight_id': request.form.get('flight_num'),
         'source_country': request.form.get('source_country'),
@@ -143,12 +162,11 @@ def search_results():
 
     no_results_found = False
 
-    # השינוי: אם אין תוצאות, טען את כל הטיסות הפעילות
     if not results:
-        results = get_flights()  # מביא הכל
-        no_results_found = True  # מדליק דגל כדי שנוכל להציג הודעה מתאימה
+        results = get_flights()
+        no_results_found = True
 
-    # שולחים ל-HTML גם את הטיסות וגם את הדגל
+
     return render_template('home_page.html', flights=results, scroll_to_results=True, no_results_found=no_results_found)
 
 
@@ -174,6 +192,9 @@ def get_options():
 
 @app.route('/order/<flight_id>', methods=['GET', 'POST'])
 def order_page(flight_id):
+    if session.get('is_manager'):
+        return redirect(url_for('manager_dashboard'))
+
     if request.method == 'GET':
         flight = get_flight_details(flight_id)
         if not flight:
@@ -219,6 +240,9 @@ def seat_selection():
     if 'temp_booking' not in session:
         return redirect(url_for('home'))
 
+    if session.get('is_manager'):
+        return redirect(url_for('manager_dashboard'))
+
     booking_data = session['temp_booking']
     flight_id = booking_data['flight_id']
 
@@ -262,6 +286,9 @@ def seat_selection():
 def payment_page():
     if 'temp_booking' not in session:
         return redirect(url_for('home'))
+
+    if session.get('is_manager'):
+        return redirect(url_for('manager_dashboard'))
 
     booking_data = session['temp_booking']
     flight_id = booking_data['flight_id']
@@ -314,19 +341,16 @@ def payment_page():
                 row_str = parts[0]
                 col_str = parts[1]
 
-                # המרה ל-INT חשובה כדי למנוע אי תאימות מול ה-DB
                 row_num = int(row_str)
 
-                # שליפת פרטי המושב
                 query_seat = """SELECT class_type, price_supplement FROM Seats 
                                         WHERE plane_id = %s AND row_num = %s AND col_num = %s"""
                 cursor.execute(query_seat, (flight['plane_id'], row_num, col_str))
                 seat_info = cursor.fetchone()
 
-                # בדיקה קריטית 1: האם המושב נמצא?
                 if not seat_info:
                     print(f"CRITICAL ERROR: Seat {seat_code} not found for plane {flight['plane_id']}!")
-                    continue  # מדלג למושב הבא כדי לא לקרוס
+                    continue
 
                 final_ticket_price = flight['base_price'] + seat_info['price_supplement']
 
@@ -343,11 +367,10 @@ def payment_page():
                     registered_email=registered_email_val
                 )
 
-                # בדיקה קריטית 2: האם הכרטיס נשמר?
                 success_t, msg_t = add_to_sql(new_ticket)
                 if not success_t:
                     print(f"SQL INSERT FAILED for seat {seat_code}: {msg_t}")
-                    # כאן תראה במסך השחור למטה בדיוק למה זה נכשל (למשל Foreign Key)
+
                 else:
                     print(f"Ticket for seat {seat_code} saved successfully.")
 
@@ -742,7 +765,8 @@ def report_cancellations():
 @app.route('/manager/ask-cancel-flight/<int:flight_id>')
 def manager_ask_cancel_flight(flight_id):
     if not session.get('is_manager'):
-        return redirect(url_for('home'))
+        flash("Access Denied. Managers only.")
+        return redirect(url_for('manager_login'))
 
     flight = get_flight_details_for_manager(flight_id)
     if not flight:
