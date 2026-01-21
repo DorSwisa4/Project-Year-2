@@ -619,171 +619,105 @@ def create_classes_and_seats(plane_id, plane_size, form_data):
     return True
 
 
-# --- REPORT 1: LOAD FACTOR ---
-def get_load_factor_stats():
-    """
-    Returns a list of flights with their capacity, tickets sold, and occupancy %.
-    """
+def get_plane_layout(plane_id):
+
     conn = None
     cursor = None
-    results = []
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
-
-        # This query calculates capacity (from Classes) and sold tickets (from Tickets)
-        query = """
-            SELECT 
-                f.flight_id, 
-                f.src_city, 
-                f.dst_city, 
-                DATE_FORMAT(f.departure_time, '%Y-%m-%d %H:%i') as dept_time,
-                p.manufacturer,
-
-                -- Subquery for Total Capacity
-                (SELECT IFNULL(SUM(total_seats), 0) FROM Classes c WHERE c.plane_id = f.plane_id) as capacity,
-
-                -- Subquery for Tickets Sold
-                (SELECT COUNT(*) FROM Tickets t WHERE t.flight_id = f.flight_id) as tickets_sold
-
-            FROM Flights f
-            JOIN Planes p ON f.plane_id = p.plane_id
-            WHERE f.status != 'Cancelled'
-            ORDER BY f.departure_time DESC
-        """
-        cursor.execute(query)
-        data = cursor.fetchall()
-
-        # Calculate Percentage in Python to be safe
-        for row in data:
-            cap = row['capacity']
-            sold = row['tickets_sold']
-            percentage = round((sold / cap * 100), 1) if cap > 0 else 0
-
-            row['occupancy'] = percentage
-            results.append(row)
-
-    except mysql.connector.Error as err:
-        print(f"Report Error: {err}")
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
-    return results
-
-
-# --- REPORT 2: REVENUE ---
-def get_revenue_stats():
-    """ Returns total revenue grouped by Month. """
-    conn = None
-    cursor = None
-    results = []
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
-
-        # Group by Year-Month
-        query = """
-            SELECT 
-                DATE_FORMAT(f.departure_time, '%Y-%m') as month,
-                SUM(t.price) as total_revenue
-            FROM Tickets t
-            JOIN Flights f ON t.flight_id = f.flight_id
-            GROUP BY month
-            ORDER BY month ASC
-        """
-        cursor.execute(query)
-        results = cursor.fetchall()
-
-    except mysql.connector.Error as err:
-        print(f"Report Error: {err}")
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
-    return results
-
-
-# --- REPORT 3: POPULAR ROUTES ---
-def get_popular_routes_stats():
-    """ Returns top destinations by ticket sales. """
-    conn = None
-    cursor = None
-    results = []
+    layout = []
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
 
         query = """
-            SELECT 
-                f.dst_city, 
-                COUNT(t.ticket_number) as ticket_count
-            FROM Tickets t
-            JOIN Flights f ON t.flight_id = f.flight_id
-            GROUP BY f.dst_city
-            ORDER BY ticket_count DESC
-            LIMIT 5
+            SELECT class_type, num_rows, num_columns 
+            FROM Classes 
+            WHERE plane_id = %s 
+            ORDER BY class_type ASC
         """
-        cursor.execute(query)
-        results = cursor.fetchall()
+        cursor.execute(query, (plane_id,))
+        layout = cursor.fetchall()
+
     except mysql.connector.Error as err:
-        print(f"Report Error: {err}")
+        print(f"Error fetching layout: {err}")
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
-    return results
+    return layout
 
 
-# --- REPORT 4: OPERATIONAL HEALTH (orders) ---
-def get_order_status_stats():
-    """ Returns count of Orders grouped by their status. """
+def get_occupied_seats(flight_id):
+
     conn = None
     cursor = None
-    results = {
-        'Active': 0,
-        'Completed': 0,
-        'CancelledByCustomer': 0,
-        'CancelledBySystem': 0
-    }
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
-
-        query = "SELECT status, COUNT(*) as count FROM Orders GROUP BY status"
-        cursor.execute(query)
-        rows = cursor.fetchall()
-
-        for row in rows:
-            if row['status'] in results:
-                results[row['status']] = row['count']
-
-    except mysql.connector.Error as err:
-        print(f"Report Error: {err}")
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
-    return results
-
-def assign_crew_to_flight(flight_id, pilot_ids, attendant_ids):
-    conn = None
+    occupied = set()
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
 
-        # Insert Pilots
-        sql_pilot = "INSERT INTO PilotsOnFlights (pilot_id, flight_id) VALUES (%s, %s)"
-        for p_id in pilot_ids:
-            cursor.execute(sql_pilot, (p_id, flight_id))
+        query = "SELECT row_num, col_num FROM Tickets WHERE flight_id = %s"
+        cursor.execute(query, (flight_id,))
 
-        # Insert Attendants
-        sql_att = "INSERT INTO AttendantsOnFlights (attendant_id, flight_id) VALUES (%s, %s)"
-        for a_id in attendant_ids:
-            cursor.execute(sql_att, (a_id, flight_id))
+        for (r, c) in cursor.fetchall():
+            occupied.add(f"{r}-{c}")  # format: "5-A"
+
+    except mysql.connector.Error as err:
+        print(f"Error fetching occupied seats: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+    return occupied
+
+
+
+def is_email_registered(email):
+    conn = None
+    cursor = None
+    exists = False
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        cursor.execute("SELECT email FROM RegisteredCustomers WHERE email = %s", (email,))
+        if cursor.fetchone():
+            exists = True
+    except mysql.connector.Error as err:
+        print(f"Error checking email: {err}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+    return exists
+
+
+def ensure_guest_exists(email, first_name, last_name, phones):
+
+    conn = None
+    cursor = None
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        # 1. בדיקה אם קיים
+        cursor.execute("SELECT email FROM GuestCustomers WHERE email = %s", (email,))
+        if not cursor.fetchone():
+            # הוספה לטבלת אורחים
+            cursor.execute(
+                "INSERT INTO GuestCustomers (email, first_name_en, last_name_en) VALUES (%s, %s, %s)",
+                (email, first_name, last_name)
+            )
+
+        for phone in phones:
+            if phone.strip():
+                cursor.execute("SELECT * FROM GuestPhones WHERE email=%s AND phone_number=%s", (email, phone))
+                if not cursor.fetchone():
+                    cursor.execute("INSERT INTO GuestPhones (email, phone_number) VALUES (%s, %s)", (email, phone))
 
         conn.commit()
         return True
     except mysql.connector.Error as err:
-        print(f"Error assigning crew: {err}")
+        print(f"Error ensuring guest: {err}")
+        if conn: conn.rollback()
         return False
     finally:
+        if cursor: cursor.close()
         if conn: conn.close()
 
 
@@ -814,9 +748,10 @@ def get_available_resources_for_flight(src_country, query_date_str, duration_str
         print(f"Error parsing duration: {e}")
 
     conn = None
+    cursor = None
     try:
         conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
 
         # --- 2. FETCH PLANES ---
         sql_planes = """
@@ -857,9 +792,9 @@ def get_available_resources_for_flight(src_country, query_date_str, duration_str
                           cursor.fetchall()]
 
     except mysql.connector.Error as err:
-        print(f"Error fetching resources: {err}")
-        return {'error': str(err)}
+        print(f"Error updating flight status: {err}")
     finally:
+        if cursor: cursor.close()
         if conn: conn.close()
 
     # --- 5. APPLY FILTERING LOGIC ---
