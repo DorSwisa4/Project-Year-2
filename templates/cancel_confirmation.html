@@ -12,7 +12,13 @@
 
     <nav class="navbar">
         <div class="nav-content">
-            <h2 class="brand-text">Fly-Tau</h2>
+            <div style="display: flex; align-items: center;">
+                <img src="{{ url_for('static', filename='logo.png') }}"
+                     alt="Logo"
+                     style="height: 75px; width: auto; margin-right: 10px;">
+
+                <h2 class="brand-text" style="margin: 0;">Fly-Tau</h2>
+            </div>
         </div>
     </nav>
 

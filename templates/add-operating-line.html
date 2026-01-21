@@ -22,8 +22,13 @@
 
     <nav class="navbar">
         <div class="nav-content">
-            <a href="{{ url_for('manager_dashboard') }}" style="text-decoration: none;">
-                <h2 style="color:white; font-weight:800;">Fly-Tau<span style="font-weight:300; font-size: 0.8em; opacity: 0.8;">| Management</span></h2>
+            <a href="{{ url_for('manager_dashboard') }}" style="text-decoration: none; display: flex; align-items: center;">
+
+                <img src="{{ url_for('static', filename='logo.png') }}"
+                     alt="Logo"
+                     style="height: 75px; width: auto; margin-right: 10px;">
+
+                <h2 style="color:white; font-weight:800; margin: 0;">Fly-Tau<span style="font-weight:300; font-size: 0.8em; opacity: 0.8;">| Management</span></h2>
             </a>
         </div>
         <div class="nav-links">
