@@ -33,6 +33,9 @@ def home():
 
 @app.route('/my-bookings')
 def my_bookings():
+    """
+    Displays the booking history for a logged-in registered customer.
+    """
     # 1. Security Check
     if 'user_email' not in session:
         flash("Please login to view your bookings.")
@@ -48,37 +51,78 @@ def my_bookings():
     return render_template('my-bookings-history.html', orders=orders)
 
 
-@app.route('/cancel-order/<int:order_code>/<int:flight_id>')
-def cancel_order(order_code, flight_id):
-    if 'user_email' not in session:
-        return redirect(url_for('login'))
-
-    # 1. Re-validate the 36-hour rule on the server side (Security)
-    flight = get_flight_details(flight_id)  # Using existing util function
-    if not flight:
-        flash("Flight not found.")
+@app.route('/find-booking', methods=['GET', 'POST'])
+def find_my_booking_page():
+    """
+    Allows a guest to find their order using Order Code and Email.
+    """
+    # If user is logged in, redirect them to their own history page
+    if 'user_email' in session:
         return redirect(url_for('my_bookings'))
 
-    flight_time = flight['departure_time']
-    # If departure_time is a string, convert it. If datetime object, use directly.
+    if request.method == 'GET':
+        return render_template('find-my-booking.html')
+
+    if request.method == 'POST':
+        order_code = request.form.get('order_code')
+        email = request.form.get('email')
+
+        # Search for the order
+        order = get_guest_order(order_code, email)
+
+        if order:
+            return render_template('find-my-booking.html', order=order)
+        else:
+            flash("Order not found. Please check your Order ID and Email.")
+            return redirect(url_for('find_my_booking_page'))
+
+
+@app.route('/ask-cancel/<int:order_code>')
+def ask_cancel_page(order_code):
+    """
+    Renders the confirmation page for both Guests and Registered Users.
+    Performs the 36-hour check before showing the page.
+    """
+    order = get_order_details_for_cancel(order_code)
+
+    if not order:
+        flash("Order not found.")
+        return redirect(url_for('home'))
+
+    # Security: 36 Hour Check
+    flight_time = order['departure_time']
     if isinstance(flight_time, str):
         flight_time = datetime.strptime(flight_time, '%Y-%m-%d %H:%M:%S')
 
-    time_diff = flight_time - datetime.now()
+    if (flight_time - datetime.now()) < timedelta(hours=36):
+        flash("Cannot Cancel: Less than 36 hours remaining to flight.")
 
-    if time_diff < timedelta(hours=36):
-        flash("Error: Cannot cancel. Less than 36 hours remaining to flight.")
-        return redirect(url_for('my_bookings'))
+        # Redirect back to the correct page based on user type
+        if 'user_email' in session:
+            return redirect(url_for('my_bookings'))
+        else:
+            return redirect(url_for('find_my_booking_page'))
 
-    # 2. Perform Cancellation
+    return render_template('cancel_confirmation.html', order=order)
+
+
+@app.route('/perform-cancel/<int:order_code>', methods=['POST'])
+def perform_cancel(order_code):
+    """
+    Executes the cancellation after the user clicks 'Yes'.
+    """
     success = cancel_order_by_user(order_code)
 
     if success:
-        flash("Order cancelled successfully. You have been charged 5% of the total cost.")
+        flash("Order cancelled successfully. The refund (95%) has been processed.")
     else:
-        flash("Error occurred while cancelling order.")
+        flash("Error occurred during cancellation.")
 
-    return redirect(url_for('my_bookings'))
+    # Redirect Logic
+    if 'user_email' in session:
+        return redirect(url_for('my_bookings'))
+    else:
+        return redirect(url_for('find_my_booking_page'))
 
 
 @app.route('/search', methods=['POST'])
@@ -181,19 +225,24 @@ def seat_selection():
     total_needed = int(booking_data['tickets_economy']) + int(booking_data['tickets_business'])
 
     if request.method == 'GET':
-        flight = get_flight_details(flight_id)
-        layout = get_plane_layout(flight['plane_id'])
+        booking = session.get('temp_booking')
+        if not booking:
+            return redirect(url_for('home'))
+
+        flight_id = booking['flight_id']
+
+        # 1. Get Plane Layout
+        plane_layout = get_plane_layout(flight_id)  # Your existing function
+
+        # 2. Get Occupied Seats (USING THE FIXED FUNCTION)
         occupied_seats = get_occupied_seats(flight_id)
 
-        col_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-        return render_template('seat_selection.html',
-                               flight=flight,
-                               layout=layout,
-                               occupied_seats=occupied_seats,
-                               booking=booking_data,
-                               col_letters=col_letters,
-                               total_needed=total_needed)
+        # 3. Render Template
+        return render_template('Seat_selection.html',
+                               booking=booking,
+                               layout=plane_layout,
+                               occupied_seats=occupied_seats,  # Pass the filtered list
+                               col_letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
     if request.method == 'POST':
         selected_seats = request.form.getlist('selected_seats')
@@ -535,7 +584,7 @@ def api_schedule_data():
         request_data = request.json
         action = request_data.get('action')
 
-        # 1. Fetch Operating Lines (Routes) for the Dropdowns
+        # 1. Fetch Operating Lines
         if action == 'get_lines':
             conn = mysql.connector.connect(**db_config)
             cursor = conn.cursor(dictionary=True)
@@ -543,7 +592,7 @@ def api_schedule_data():
             cursor.execute("SELECT * FROM OperatingLines")
             lines = cursor.fetchall()
 
-            # Convert 'flight_duration' (TimeDelta) to string so JSON can read it
+            # Convert 'flight_duration' (TimeDelta) to string for JSON
             for line in lines:
                 if 'flight_duration' in line and line['flight_duration'] is not None:
                     line['flight_duration'] = str(line['flight_duration'])
@@ -552,19 +601,20 @@ def api_schedule_data():
             conn.close()
             return jsonify(lines)
 
-        # 2. Fetch Available Resources (Planes/Crew) based on History
+        # 2. Fetch Resources (FIXED: Now passes duration)
         elif action == 'get_resources':
             src_country = request_data.get('src_country')
             dept_date = request_data.get('dept_date')
             dept_time = request_data.get('dept_time')
+            duration = request_data.get('duration')  # <--- NEW: Get duration from frontend
 
             if not dept_date or not dept_time:
                 return jsonify({'error': 'Date and Time are required'}), 400
 
             full_date_str = f"{dept_date} {dept_time}:00"
 
-            # Call the function from utils.py
-            resources = get_available_resources_for_flight(src_country, full_date_str)
+            # Pass duration to the util function
+            resources = get_available_resources_for_flight(src_country, full_date_str, duration)
 
             return jsonify(resources)
 
@@ -583,7 +633,7 @@ def schedule_flight():
         return render_template('schedule-flight.html')
 
     if request.method == 'POST':
-        # 1. Extract Basic Flight Details
+        # 1. Extract Details
         src_country = request.form.get('src_country')
         src_city = request.form.get('src_city')
         src_airport = request.form.get('src_airport')
@@ -592,38 +642,39 @@ def schedule_flight():
         dst_airport = request.form.get('dst_airport')
         base_price = request.form.get('base_price')
 
-        # 2. Date & Time
         dept_date = request.form.get('dept_date')
         dept_time = request.form.get('dept_time')
-        landing_datetime = request.form.get('landing_datetime')  # Calculated by JS
+        landing_datetime = request.form.get('landing_datetime')
 
-        # Create the full datetime string for the DB
-        departure_dt = f"{dept_date} {dept_time}"
+        # --- NEW VALIDATION: Prevent Past Dates ---
+        departure_dt_str = f"{dept_date} {dept_time}"
+        departure_dt_obj = datetime.strptime(departure_dt_str, "%Y-%m-%d %H:%M")
 
-        # 3. Resources (IDs)
+        if departure_dt_obj < datetime.now():
+            flash("Error: You cannot schedule a flight in the past!")
+            return redirect(url_for('schedule_flight'))
+        # ------------------------------------------
+
         plane_id = request.form.get('selected_plane')
         pilot_ids = request.form.getlist('selected_pilots')
         attendant_ids = request.form.getlist('selected_attendants')
 
-        # 4. Create Flight Object
+        # 2. Create Flight Object
         new_flight = Flight(
             plane_id=plane_id,
             src_country=src_country, src_city=src_city, src_airport=src_airport,
             dst_country=dst_country, dst_city=dst_city, dst_airport=dst_airport,
-            departure_time=departure_dt,
+            departure_time=departure_dt_str,
             landing_time=landing_datetime,
             status='Active'
         )
-        # Manually attach base_price (assuming your DB insert logic handles it)
         new_flight.base_price = base_price
 
-        # 5. Insert Flight into DB
+        # 3. Save to DB
         success, msg = add_to_sql(new_flight)
 
         if success:
-            # 6. Assign Crew to the new Flight ID
             assign_success = assign_crew_to_flight(new_flight.flight_id, pilot_ids, attendant_ids)
-
             if assign_success:
                 flash("Success! Flight scheduled successfully.")
                 return redirect(url_for('manager_dashboard'))
@@ -687,6 +738,53 @@ def report_cancellations():
     ]
 
     return render_template('report_health.html', labels=labels, values=values)
+
+@app.route('/manager/ask-cancel-flight/<int:flight_id>')
+def manager_ask_cancel_flight(flight_id):
+    if not session.get('is_manager'):
+        return redirect(url_for('home'))
+
+    flight = get_flight_details_for_manager(flight_id)
+    if not flight:
+        flash("Flight not found.")
+        return redirect(url_for('manager_dashboard'))
+
+    # --- 72 Hour Rule Check ---
+    flight_time = flight['departure_time']
+    if isinstance(flight_time, str):
+         flight_time = datetime.strptime(flight_time, '%Y-%m-%d %H:%M:%S')
+
+    if (flight_time - datetime.now()) < timedelta(hours=72):
+        flash("Action Denied: Flights can only be cancelled by the system 72 hours in advance.")
+        return redirect(url_for('manager_dashboard'))
+
+    return render_template('manager_cancel_confirm.html', flight=flight)
+
+
+@app.route('/manager/perform-cancel-flight/<int:flight_id>', methods=['POST'])
+def manager_perform_cancel_flight(flight_id):
+    if not session.get('is_manager'):
+        return redirect(url_for('home'))
+
+    # Re-validate 72h rule (Server side security)
+    flight = get_flight_details_for_manager(flight_id)
+    flight_time = flight['departure_time']
+    if isinstance(flight_time, str):
+         flight_time = datetime.strptime(flight_time, '%Y-%m-%d %H:%M:%S')
+
+    if (flight_time - datetime.now()) < timedelta(hours=72):
+        flash("Action Denied: Less than 72 hours to departure.")
+        return redirect(url_for('manager_dashboard'))
+
+    # Execute Cancellation
+    success = cancel_flight_by_system(flight_id)
+
+    if success:
+        flash(f"Flight {flight_id} cancelled. All associated orders have been refunded (System Cancellation).")
+    else:
+        flash("Error cancelling flight.")
+
+    return redirect(url_for('manager_dashboard'))
 
 
 # --- LOGOUT ROUTE (Crucial!) ---
