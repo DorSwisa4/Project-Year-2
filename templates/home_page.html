@@ -8,10 +8,16 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
 <nav class="navbar">
-    <div class="nav-content">
-        <h2 style="color:white; font-weight:800;">Fly-Tau</h2>
+     <div class="nav-content">
+            <div style="display: flex; align-items: center;">
+                <img src="{{ url_for('static', filename='logo.png') }}"
+                     alt="Logo"
+                     style="height: 75px; width: auto; margin-right: 10px;">
+
+                <h2 style="color:white; font-weight:800; margin: 0;">Fly-Tau</h2>
+        </div>
+        <div class="nav-links">
 
         <div class="nav-links">
             {% if 'user_name' in session %}
