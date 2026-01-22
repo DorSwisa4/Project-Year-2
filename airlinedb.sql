@@ -1,4 +1,3 @@
-Drop Database if exists airlinedb;
 CREATE DATABASE AirlineDB;
 USE AirlineDB;
 
@@ -496,4 +495,5 @@ DROP PROCEDURE GenerateTraffic;
 
 -- Cleanup Helpers
 DROP TABLE TempNums;
+DROP TABLE TempCols;
 DROP TABLE TempCols;
