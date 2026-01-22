@@ -690,10 +690,6 @@ def get_load_factor_stats():
 def get_revenue_by_plane_type():
     """
     Returns revenue breakdown by Manufacturer and Plane Size.
-    Includes logic for:
-    - Completed orders (100%)
-    - Cancelled by Customer (5% penalty fee)
-    - Active orders for flights departing in < 36 hours (assumed committed)
     """
     conn = None
     cursor = None
@@ -702,41 +698,41 @@ def get_revenue_by_plane_type():
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
 
+        # FIX: Changed 'tickets' to 'Tickets', 'planes' to 'Planes', etc.
         query = """
             SELECT 
-                planes.manufacturer, 
-                planes.size, 
+                Planes.manufacturer, 
+                Planes.size, 
                 SUM(CASE 
-                    WHEN orders.status = 'Completed' AND tickets.class_type = 'Economy' THEN tickets.price
-                    WHEN orders.status = 'CancelledByCustomer' AND tickets.class_type = 'Economy' THEN tickets.price * 0.05
-                    WHEN orders.status = 'Active' 
-                         AND tickets.class_type = 'Economy'
-                         AND flights.departure_time <= NOW() + INTERVAL 36 HOUR 
-                         AND flights.departure_time > NOW() 
-                         THEN tickets.price
+                    WHEN Orders.status = 'Completed' AND Tickets.class_type = 'Economy' THEN Tickets.price 
+                    WHEN Orders.status = 'CancelledByCustomer' AND Tickets.class_type = 'Economy' THEN Tickets.price * 0.05
+                    WHEN Orders.status = 'Active' 
+                         AND Tickets.class_type = 'Economy'
+                         AND Flights.departure_time <= NOW() + INTERVAL 36 HOUR
+                         THEN Tickets.price 
                     ELSE 0 
-                END) AS revenue_from_economy, 
+                END) AS revenue_from_economy,
                 SUM(CASE 
-                    WHEN orders.status = 'Completed' AND tickets.class_type = 'Business' THEN tickets.price    
-                    WHEN orders.status = 'CancelledByCustomer' AND tickets.class_type = 'Business' THEN tickets.price * 0.05
-                    WHEN orders.status = 'Active' 
-                         AND tickets.class_type = 'Business'
-                         AND flights.departure_time <= NOW() + INTERVAL 36 HOUR 
-                         AND flights.departure_time > NOW() 
-                         THEN tickets.price
+                    WHEN Orders.status = 'Completed' AND Tickets.class_type = 'Business' THEN Tickets.price 
+                    WHEN Orders.status = 'CancelledByCustomer' AND Tickets.class_type = 'Business' THEN Tickets.price * 0.05
+                    WHEN Orders.status = 'Active' 
+                         AND Tickets.class_type = 'Business'
+                         AND Flights.departure_time <= NOW() + INTERVAL 36 HOUR
+                         THEN Tickets.price 
                     ELSE 0 
                 END) AS revenue_from_business
-            FROM tickets
-            JOIN planes ON tickets.plane_id = planes.plane_id
-            JOIN orders ON tickets.order_code = orders.order_code
-            JOIN flights ON tickets.flight_id = flights.flight_id
-            GROUP BY planes.manufacturer, planes.size
-            ORDER BY planes.manufacturer ASC, planes.size ASC;
+            FROM Tickets 
+            JOIN Planes ON Tickets.plane_id = Planes.plane_id 
+            JOIN Orders ON Tickets.order_code = Orders.order_code 
+            JOIN Flights ON Tickets.flight_id = Flights.flight_id 
+            GROUP BY Planes.manufacturer, Planes.size
+            ORDER BY Planes.manufacturer ASC, Planes.size ASC;
         """
         cursor.execute(query)
         results = cursor.fetchall()
 
     except mysql.connector.Error as err:
+        # Check your PythonAnywhere Error Log if this prints!
         print(f"Report Error: {err}")
     finally:
         if cursor: cursor.close()
